@@ -1,6 +1,6 @@
-# TypeScript Node Starter
+# Bookkeeper Api
 
-[![Dependency Status](https://david-dm.org/Microsoft/TypeScript-Node-Starter.svg)](https://david-dm.org/Microsoft/TypeScript-Node-Starter) [![Build Status](https://travis-ci.org/Microsoft/TypeScript-Node-Starter.svg?branch=master)](https://travis-ci.org/Microsoft/TypeScript-Node-Starter) 
+A Nodejs api written in TypeScript to track roommates common expenses. 
 
 # Pre-reqs
 - Install Docker
@@ -20,25 +20,6 @@ cd <bookkeeper-api>
 docker-compose up --build
 ```
 Navigate to `http://localhost:3000`
-
-# TypeScript + Node 
-The main purpose of this repository is to show a good end-to-end project setup and workflow for writing Node code in TypeScript.
-I will try to keep this as up-to-date as possible, but community contributions and recommendations for improvements are encouraged and will be most welcome. 
-
-In the next few sections I will call out everything that changes when adding TypeScript to an Express project.
-Note that all of this has already been setup for this project, but feel free to use this as a reference for converting other Node.js project to TypeScript.
-
-> **Note on editors!** - TypeScript has great support in [every editor](http://www.typescriptlang.org/index.html#download-links), but this project has been pre-configured for use with [VS Code](https://code.visualstudio.com/). 
-Throughout the README I'll try to call out specific places where VS code really shines or where this project has been setup to take advantage of specific features.
-
-## Getting TypeScript
-TypeScript itself is simple to add to any project with `npm`.
-```
-npm install -D typescript
-```
-If you're using VS Code then you're good to go!
-VS Code will detect and use the TypeScript version you have installed in your `node_modules` folder. 
-For other editors, make sure you have the corresponding [TypeScript plugin](http://www.typescriptlang.org/index.html#download-links). 
 
 ## Project Structure
 The most obvious difference in a TypeScript + Node project is the folder structure.
@@ -71,11 +52,6 @@ The full folder structure of this app is explained below:
 | tsconfig.json            | Config settings for compiling server code written in TypeScript                               |
 | tsconfig.tests.json      | Config settings for compiling tests written in TypeScript                                     |
 | tslint.json              | Config settings for TSLint code style checking                                                |
-
-## Building the project
-It is rare for JavaScript projects not to have some kind of build pipeline these days, however Node projects typically have the least amount build configuration. 
-Because of this I've tried to keep the build as simple as possible.
-If you're concerned about compile time, the main watch task takes ~2s to refresh.
 
 ### Configuring TypeScript compilation
 TypeScript uses the file `tsconfig.json` to adjust project compile options.
@@ -169,10 +145,6 @@ In this template, all the `.d.ts` files have already been added to `devDependenc
 Once `.d.ts` files have been installed using npm, you should see them in your `node_modules/@types` folder. 
 The compiler will always look in this folder for `.d.ts` files when resolving JavaScript libraries.
 
-### What if a library isn't on DefinitelyTyped?
-If you try to install a `.d.ts` file from `@types` and it isn't found, or you check DefinitelyTyped and cannot find a specific library, you will want to create your own `.d.ts file`.
-In the `src` folder of this project, you'll find the `types` folder which holds the `.d.ts` files that aren't on DefinitelyTyped (or weren't as of the time of this writing).
-
 #### Setting up TypeScript to look for `.d.ts` files in another folder
 The compiler knows to look in `node_modules/@types` by default, but to help the compiler find our own `.d.ts` files we have to configure path mapping in our `tsconfig.json`.
 Path mapping can get pretty confusing, but the basic idea is that the TypeScript compiler will look in specific places, in a specific order when resolving modules, and we have the ability to tell the compiler exactly how to do it.
@@ -206,10 +178,6 @@ declare module "<some-library>";
 ```
 
 If you want to invest some time into making a great `.d.ts` file that will give you great type checking and IntelliSense, the TypeScript website has great [docs on authoring `.d.ts` files](http://www.typescriptlang.org/docs/handbook/declaration-files/introduction.html). 
-
-#### Contributing to DefinitelyTyped
-The reason it's so easy to get great `.d.ts` files for most libraries is that developers like you contribute their work back to DefinitelyTyped.
-Contributing `.d.ts` files is a great way to get into the open source community if it's something you've never tried before, and as soon as your changes are accepted, every other developer in the world has access to your work.
 
 If you're interested in giving it a shot, check out the [guidance on DefinitelyTyped](https://github.com/definitelyTyped/DefinitelyTyped/#how-can-i-contribute).
 If you're not interested, [you should tell me why](https://www.surveymonkey.com/r/LN2CV82) so we can help make it easier in the future!
