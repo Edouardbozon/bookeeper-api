@@ -3,27 +3,21 @@
 [![Dependency Status](https://david-dm.org/Microsoft/TypeScript-Node-Starter.svg)](https://david-dm.org/Microsoft/TypeScript-Node-Starter) [![Build Status](https://travis-ci.org/Microsoft/TypeScript-Node-Starter.svg?branch=master)](https://travis-ci.org/Microsoft/TypeScript-Node-Starter) 
 
 # Pre-reqs
-- Install [Node.js](https://nodejs.org/en/)
-- Install [MongoDB](https://docs.mongodb.com/manual/installation/)
-- Install [VS Code](https://code.visualstudio.com/)
+- Install Docker
+- Install Docker-compose
 
 # Getting started
 - Clone the repository
 ```
-git clone --depth=1 https://github.com/Microsoft/TypeScript-Node-Starter.git <project_name>
+git clone git@github.com:Edouardbozon/bookkeeper-api.git
 ```
 - Install dependencies
 ```
-cd <project_name>
-npm install
+cd <bookkeeper-api>
 ```
-- Start your mongoDB server (you'll probably want another command prompt)
+- Run containers
 ```
-mongod
-```
-- Build and run the project
-```
-npm start
+docker-compose up --build
 ```
 Navigate to `http://localhost:3000`
 
