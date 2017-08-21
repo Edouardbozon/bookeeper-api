@@ -9,7 +9,7 @@ services:
       - ./:/code
     links:
       - db
-    command: yarn serve
+    command: yarn start
   db:
     image: "mongo:3.0.15"
     container_name: mongodb
