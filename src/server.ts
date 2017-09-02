@@ -32,6 +32,7 @@ import * as homeController from "./controllers/home";
 import * as userController from "./controllers/user";
 import * as apiController from "./controllers/api";
 import * as contactController from "./controllers/contact";
+import * as sharedFlatController from "./controllers/shared-flat";
 
 /**
  * API keys and Passport configuration.
@@ -127,6 +128,13 @@ app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userControl
  */
 app.get("/api", apiController.getApi);
 app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getFacebook);
+
+/**
+ * Shared Flats
+ */
+app.get("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.getSharedFlat);
+app.post("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.createSharedFlat);
+app.delete("/api/shared-flat/:id", passportConfig.isAuthenticated, sharedFlatController.deleteSharedFlat);
 
 /**
  * OAuth authentication routes. (Sign in)
