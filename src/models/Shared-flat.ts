@@ -1,5 +1,6 @@
 import * as mongoose from "mongoose";
 import { default as User, UserModel } from "./User";
+import { asyncMiddleware } from "../common/common";
 
 export type Address = {
     city: string
@@ -8,13 +9,19 @@ export type Address = {
     country: string
 };
 
+export type Resident = {
+    id: string,
+    joinAt: Date,
+    role: string
+};
+
 export type SharedFlatModel = mongoose.Document & {
     name: string
     private: boolean
     size: number
     full: boolean
 
-    residents: [{ _id: string, joinAt: Date, role: string }]
+    residents: Resident[]
     countResidents: number
     residentsYearsRate: number
 
@@ -27,7 +34,7 @@ export type SharedFlatModel = mongoose.Document & {
     }
 
     computeResidentsYearsRate: (residents: UserModel[]) => number
-    canBeAdministrateBy: (user: UserModel) => boolean
+    shouldBeAdministrateBy: (user: UserModel) => boolean
 };
 
 export const sharedFlatSchema = new mongoose.Schema({
@@ -36,7 +43,7 @@ export const sharedFlatSchema = new mongoose.Schema({
     size: { type: Number, default: 1 },
     full: { type: Boolean, default: false },
 
-    residents: [{ _id: String, joinAt: Date, role: String }],
+    residents: [{ id: String, joinAt: Date, role: String }],
     countResidents: { type: Number, default: 0 },
     residentsYearsRate: Number,
 
@@ -65,9 +72,10 @@ sharedFlatSchema.pre("save", async function save(next) {
     sharedFlat._meta.updatedAt = new Date();
 
     // find shared flat residents to retrieve their age,
-    // calcule "residents years rate", update "full" props
-    const ids = sharedFlat.residents.map((resident) => resident._id);
-    User.find({ "_id": { $in: ids }}, (err, residents: UserModel[]) => {
+    // calcule "residents years rate", update "full" props and "countResidents"
+    const ids = sharedFlat.residents.map((resident) => resident.id);
+    User.find({ "id": { $in: ids }}, (err, residents: UserModel[]) => {
+
         sharedFlat.countResidents = ids.length;
         sharedFlat.full = sharedFlat.size === sharedFlat.countResidents;
         sharedFlat.residentsYearsRate = sharedFlat.computeResidentsYearsRate(residents);
@@ -83,12 +91,17 @@ sharedFlatSchema.methods.computeResidentsYearsRate = function(residents: UserMod
 };
 
 /**
- * Check if user can administrate this shared flat
+ * Check if shared flat should be administrate by the given user
  */
-sharedFlatSchema.methods.canBeAdministrateBy = function(user: UserModel): boolean {
-    return (this as SharedFlatModel).residents.filter(resident => {
-        return resident._id !== user._id && resident.role === "admin";
-    }).length === 1;
+sharedFlatSchema.methods.shouldBeAdministrateBy = function(user: UserModel): boolean {
+    let check = false;
+    (this as SharedFlatModel).residents.forEach(resident => {
+        if (resident.id === user.id && resident.role === "admin") {
+            check = true;
+        }
+    });
+
+    return check;
 };
 
 const SharedFlat = mongoose.model("SharedFlat", sharedFlatSchema);
