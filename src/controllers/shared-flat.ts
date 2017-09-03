@@ -29,9 +29,17 @@ export const getSharedFlat =
 export const createSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
         // @todo check request body validity
+        // req.assert("email", "Email is not valid").isEmail();
+        // req.assert("password", "Password must be at least 4 characters long").len({ min: 4 });
+        // req.assert("confirmPassword", "Passwords do not match").equals(req.body.password);
+        // req.assert("age", "Age is incorrect").isInt();
+        // req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+
+        // const errors = req.validationErrors();
+
         const sharedFlat = new SharedFlat({
             name: req.body.name,
-            residents: [{ _id: req.user._id, role: "admin", joinAt: new Date() }],
+            residents: [{ _id: req.user.id, role: "admin", joinAt: new Date() }],
             size: req.body.size || 4,
             pricePerMonth: req.body.pricePerMonth,
             // @todo check location validity
@@ -63,11 +71,12 @@ export const deleteSharedFlat =
             if (!sharedFlat) {
                 return res.status(404).json({ message: "Shared flat not found"});
             }
-            if (!sharedFlat.canBeAdministrateBy(req.user)) {
-                return res.status(403).json({ message: "You have insufisant permission"});
+
+            if (!sharedFlat.shouldBeAdministrateBy(req.user)) {
+                return res.status(403).json({ message: "Insufisant permission"});
             }
 
-            SharedFlat.findByIdAndRemove(req.param("id"), (err, mres) => {
+            SharedFlat.findByIdAndRemove(req.param("id"), (err) => {
                 if (err) { return next(); }
                 res.status(204).end();
             });
