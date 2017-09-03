@@ -82,3 +82,31 @@ export const deleteSharedFlat =
             });
         });
     });
+
+/**
+ * POST /shared-flat/{id}/join
+ */
+export const postJoinSharedFlatRequest =
+    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+        if (!req.param("id")) {
+            return res.status(400).json({ message: "Missing {id} param"});
+        }
+
+        SharedFlat.findById(req.param("id"), (err, sharedFlat: SharedFlatModel) => {
+            if (err) { return next(); }
+            if (!sharedFlat) {
+                return res.status(404).json({ message: "Shared flat not found"});
+            }
+
+            const joinRequest = sharedFlat.makeJoinRequest(req.user, () => {
+
+            });
+
+            SharedFlat.findByIdAndRemove(req.param("id"), (err) => {
+                if (err) { return next(); }
+                res.status(204).end();
+            });
+        });
+    });
+
+

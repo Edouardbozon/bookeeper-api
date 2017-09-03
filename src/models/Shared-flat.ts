@@ -8,11 +8,18 @@ export type Address = {
     postalCode: number
     country: string
 };
-
 export type Resident = {
-    id: string,
-    joinAt: Date,
+    id: string
+    joinAt: Date
     role: string
+};
+
+export type JoinRequestStatus = "pending" | "accepted" | "rejected";
+
+export type JoinRequest = {
+    id: string
+    doAt: Date
+    status: JoinRequestStatus
 };
 
 export type SharedFlatModel = mongoose.Document & {
@@ -28,11 +35,15 @@ export type SharedFlatModel = mongoose.Document & {
     pricePerMonth: number
     location: Address
 
+    joinRequests: JoinRequest[],
+
     _meta: {
         creationDate: Date
         updatedAt: Date
     }
 
+    getAdmin: () => Resident
+    makeJoinRequest: (resident: UserModel, cb: FunctionStringCallback) => FunctionStringCallback
     computeResidentsYearsRate: (residents: UserModel[]) => number
     shouldBeAdministrateBy: (user: UserModel) => boolean
 };
@@ -54,6 +65,8 @@ export const sharedFlatSchema = new mongoose.Schema({
         postalCode: { type: Number, required: true },
         country: { type: String, required: true },
     },
+
+    joinRequests: [{ id: String, doAt: Date, status: String }],
 
     _meta: {
         creationDate: { type: Date, default: Date.now },
@@ -84,6 +97,34 @@ sharedFlatSchema.pre("save", async function save(next) {
 });
 
 /**
+ * Do a sharedFlat join request
+ * Make new shared flat admin notification
+ */
+sharedFlatSchema.methods.makeJoinRequest = function(
+    resident: UserModel,
+    cb: FunctionStringCallback
+): void {
+    const self = (this as SharedFlatModel);
+    if (!self.full) {
+        self.joinRequests.push(createJoinRequest(resident));
+        const adminId = self.getAdmin().id;
+        User.findById(adminId, (err, admin: UserModel) => {
+            if (err) { return cb; }
+            admin.notifications.push(createNotification(`${resident.profile.name}`));
+            self.save(cb);
+        });
+    }
+};
+
+/**
+ * Get admin from residents
+ */
+sharedFlatSchema.methods.getAdmin = function(): Resident {
+    const self = (this as SharedFlatModel);
+    return self.residents.filter((resident: Resident) => resident.role === "admin")[0];
+};
+
+/**
  * Compute years rate of a shared flat
  */
 sharedFlatSchema.methods.computeResidentsYearsRate = function(residents: UserModel[]): number {
@@ -103,6 +144,12 @@ sharedFlatSchema.methods.shouldBeAdministrateBy = function(user: UserModel): boo
 
     return check;
 };
+
+const createJoinRequest = (resident: UserModel): JoinRequest => ({
+    id: resident.id,
+    status: "pending",
+    doAt: new Date(),
+});
 
 const SharedFlat = mongoose.model("SharedFlat", sharedFlatSchema);
 export default SharedFlat;
