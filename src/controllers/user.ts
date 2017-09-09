@@ -8,23 +8,6 @@ import { LocalStrategyInfo } from "passport-local";
 import { WriteError } from "mongodb";
 const request = require("express-validator");
 
-<<<<<<< 01f445e3b4dfb16ae87502f256097a3bed415abc
-
-/**
- * GET /login
- * Login page.
- */
-export let getLogin = async (req: Request, res: Response) => {
-  if (req.user) {
-    return res.redirect("/");
-  }
-  res.render("account/login", {
-    title: "Login"
-  });
-};
-
-=======
->>>>>>> Switch user controller in full api mode
 /**
  * POST /login
  * Sign in using email and password.
@@ -53,31 +36,6 @@ export let postLogin = async (req: Request, res: Response, next: NextFunction) =
 };
 
 /**
-<<<<<<< 01f445e3b4dfb16ae87502f256097a3bed415abc
- * GET /logout
- * Log out.
- */
-export let logout = async (req: Request, res: Response) => {
-  req.logout();
-  res.redirect("/");
-};
-
-/**
- * GET /signup
- * Signup page.
- */
-export let getSignup = async (req: Request, res: Response) => {
-  if (req.user) {
-    return res.redirect("/");
-  }
-  res.render("account/signup", {
-    title: "Create Account"
-  });
-};
-
-/**
-=======
->>>>>>> Switch user controller in full api mode
  * POST /signup
  * Create a new local account.
  */
@@ -118,19 +76,6 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
 };
 
 /**
-<<<<<<< 01f445e3b4dfb16ae87502f256097a3bed415abc
- * GET /account
- * Profile page.
- */
-export let getAccount = async (req: Request, res: Response) => {
-  res.render("account/profile", {
-    title: "Account Management"
-  });
-};
-
-/**
-=======
->>>>>>> Switch user controller in full api mode
  * POST /account/profile
  * Update profile information.
  */

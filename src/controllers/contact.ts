@@ -10,19 +10,6 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
-<<<<<<< 94f6e456dd12726c924e8ba87f53926a21c6078c
- * GET /contact
- * Contact form page.
- */
-export let getContact = async (req: Request, res: Response) => {
-  res.render("contact", {
-    title: "Contact"
-  });
-};
-
-/**
-=======
->>>>>>> Remove views and public dir
  * POST /contact
  * Send a contact form via Nodemailer.
  */
