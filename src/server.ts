@@ -127,6 +127,7 @@ app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthor
 app.get("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.getSharedFlat);
 app.post("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.createSharedFlat);
 app.delete("/api/shared-flat/:id", passportConfig.isAuthenticated, sharedFlatController.deleteSharedFlat);
+app.post("/api/shared-flat/:id/join", passportConfig.isAuthenticated, sharedFlatController.postJoinSharedFlatRequest);
 
 /**
  * OAuth authentication routes. (Sign in)
