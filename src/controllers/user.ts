@@ -141,7 +141,7 @@ export let postUpdateProfile = async (req: Request, res: Response, next: NextFun
   const errors = req.validationErrors();
 
   if (errors) {
-    return res.status(504).json(errors);
+    return res.status(400).json(errors);
   }
 
   User.findById(req.user.id, (err, user: UserModel) => {

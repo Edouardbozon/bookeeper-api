@@ -10,6 +10,7 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
+<<<<<<< 94f6e456dd12726c924e8ba87f53926a21c6078c
  * GET /contact
  * Contact form page.
  */
@@ -20,6 +21,8 @@ export let getContact = async (req: Request, res: Response) => {
 };
 
 /**
+=======
+>>>>>>> Remove views and public dir
  * POST /contact
  * Send a contact form via Nodemailer.
  */
@@ -31,8 +34,7 @@ export let postContact = async (req: Request, res: Response) => {
   const errors = req.validationErrors();
 
   if (errors) {
-    req.flash("errors", errors);
-    return res.redirect("/contact");
+    return res.status(400).json(errors);
   }
 
   const mailOptions = {
@@ -44,10 +46,8 @@ export let postContact = async (req: Request, res: Response) => {
 
   transporter.sendMail(mailOptions, (err) => {
     if (err) {
-      req.flash("errors", { msg: err.message });
-      return res.redirect("/contact");
+      return res.status(500).json(err);
     }
-    req.flash("success", { msg: "Email has been sent successfully!" });
-    res.redirect("/contact");
+    res.status(200).json({message: "Email send"});
   });
 };
