@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import { LocalStrategyInfo } from "passport-local";
 import { WriteError } from "mongodb";
 import { asyncMiddleware } from "../common/common";
+import { createResponse } from "../common/factories";
 
 import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat";
 
@@ -39,7 +40,7 @@ export const createSharedFlat =
 
         const sharedFlat = new SharedFlat({
             name: req.body.name,
-            residents: [{ _id: req.user.id, role: "admin", joinAt: new Date() }],
+            residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
             size: req.body.size || 4,
             pricePerMonth: req.body.pricePerMonth,
             // @todo check location validity
@@ -89,23 +90,23 @@ export const deleteSharedFlat =
 export const postJoinSharedFlatRequest =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
         if (!req.param("id")) {
-            return res.status(400).json({ message: "Missing {id} param"});
+            return res.status(400).json(createResponse("Missing {id} param"));
         }
 
         SharedFlat.findById(req.param("id"), (err, sharedFlat: SharedFlatModel) => {
             if (err) { return next(); }
             if (!sharedFlat) {
-                return res.status(404).json({ message: "Shared flat not found"});
+                return res.status(404).json(createResponse("Shared flat not found"));
             }
 
-            const joinRequest = sharedFlat.makeJoinRequest(req.user, () => {
-
-            });
-
-            SharedFlat.findByIdAndRemove(req.param("id"), (err) => {
-                if (err) { return next(); }
-                res.status(204).end();
-            });
+            sharedFlat
+                .makeJoinRequest(req.user)
+                .then(() => {
+                    res.status(200).json(createResponse("Request succesfully posted"));
+                })
+                .catch(err => {
+                    res.status(500).json(createResponse(err));
+                });
         });
     });
 

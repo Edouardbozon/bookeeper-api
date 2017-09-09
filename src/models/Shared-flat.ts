@@ -1,6 +1,7 @@
 import * as mongoose from "mongoose";
 import { default as User, UserModel } from "./User";
 import { asyncMiddleware } from "../common/common";
+import { createNotification, createJoinRequest, JoinRequest } from "../common/factories";
 
 export type Address = {
     city: string
@@ -11,16 +12,10 @@ export type Address = {
 export type Resident = {
     id: string
     joinAt: Date
-    role: string
+    role: ResidentRoles
 };
 
-export type JoinRequestStatus = "pending" | "accepted" | "rejected";
-
-export type JoinRequest = {
-    id: string
-    doAt: Date
-    status: JoinRequestStatus
-};
+export type ResidentRoles = "admin" | "default";
 
 export type SharedFlatModel = mongoose.Document & {
     name: string
@@ -43,7 +38,7 @@ export type SharedFlatModel = mongoose.Document & {
     }
 
     getAdmin: () => Resident
-    makeJoinRequest: (resident: UserModel, cb: FunctionStringCallback) => FunctionStringCallback
+    makeJoinRequest: (askingResident: UserModel) => Promise<void>
     computeResidentsYearsRate: (residents: UserModel[]) => number
     shouldBeAdministrateBy: (user: UserModel) => boolean
 };
@@ -101,19 +96,28 @@ sharedFlatSchema.pre("save", async function save(next) {
  * Make new shared flat admin notification
  */
 sharedFlatSchema.methods.makeJoinRequest = function(
-    resident: UserModel,
-    cb: FunctionStringCallback
-): void {
-    const self = (this as SharedFlatModel);
-    if (!self.full) {
-        self.joinRequests.push(createJoinRequest(resident));
-        const adminId = self.getAdmin().id;
-        User.findById(adminId, (err, admin: UserModel) => {
-            if (err) { return cb; }
-            admin.notifications.push(createNotification(`${resident.profile.name}`));
-            self.save(cb);
+    askingResident: UserModel
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (this.full) reject("Shared flat is full");
+
+        this.residents.forEach((resident: Resident) => {
+            if (resident.id === askingResident.id) reject("You're already member of this shared flat");
         });
-    }
+
+        this.joinRequests.push(createJoinRequest(askingResident));
+        this.save((err: any) => {
+            if (err) reject(err);
+
+            User.findById(this.getAdmin().id, (err, admin: UserModel) => {
+                if (err) reject(err);
+                console.log(askingResident);
+                admin.addNotification(`${askingResident.profile.name} asking to join your shared flat`, "info")
+                    .then(() => resolve())
+                    .catch((err: any) => reject(err));
+            });
+        });
+    });
 };
 
 /**
@@ -144,12 +148,6 @@ sharedFlatSchema.methods.shouldBeAdministrateBy = function(user: UserModel): boo
 
     return check;
 };
-
-const createJoinRequest = (resident: UserModel): JoinRequest => ({
-    id: resident.id,
-    status: "pending",
-    doAt: new Date(),
-});
 
 const SharedFlat = mongoose.model("SharedFlat", sharedFlatSchema);
 export default SharedFlat;
