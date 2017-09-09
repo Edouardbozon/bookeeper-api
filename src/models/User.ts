@@ -4,6 +4,8 @@ import * as mongoose from "mongoose";
 
 import { INotification, NotificationType, createNotification } from "../common/factories";
 
+export type NotificationModel = mongoose.Document & INotification;
+
 export type UserModel = mongoose.Document & {
   email: string,
   password: string,
@@ -34,6 +36,13 @@ export type AuthToken = {
   kind: string
 };
 
+const notificationSchema = new mongoose.Schema({
+    message: String,
+    type: String,
+    createdAt: { type: Date, default: Date.now },
+    readed: { type: Boolean, default: false }
+});
+
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   password: String,
@@ -46,12 +55,7 @@ const userSchema = new mongoose.Schema({
   google: String,
   tokens: Array,
 
-  notifications: [{
-    message: String,
-    type: String,
-    createdAt: { type: Date, default: Date.now },
-    readed: { type: Boolean, default: false }
-  }],
+  notifications: [notificationSchema],
 
   profile: {
     name: String,

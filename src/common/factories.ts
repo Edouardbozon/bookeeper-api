@@ -1,11 +1,12 @@
+import * as mongoose from "mongoose";
 import { UserModel } from "../models/User";
 
 export type NotificationType = "alert" | "success" | "info";
+
 export interface INotification {
     message: string;
     type: NotificationType;
     createdAt: Date;
-
     readed: boolean;
 }
 

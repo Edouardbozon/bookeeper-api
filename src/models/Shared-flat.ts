@@ -112,7 +112,7 @@ sharedFlatSchema.methods.makeJoinRequest = function(
             User.findById(this.getAdmin().id, (err, admin: UserModel) => {
                 if (err) reject(err);
                 console.log(askingResident);
-                admin.addNotification(`${askingResident.profile.name} asking to join your shared flat`, "info")
+                admin.addNotification(`asking to join your shared flat`, "info")
                     .then(() => resolve())
                     .catch((err: any) => reject(err));
             });
