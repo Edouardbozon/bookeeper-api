@@ -125,7 +125,7 @@ export let isAuthenticated = (req: Request, res: Response, next: NextFunction) =
   if (req.isAuthenticated()) {
     return next();
   }
-  res.redirect("/login");
+  return res.sendStatus(403);
 };
 
 /**

@@ -8,20 +8,6 @@ import { LocalStrategyInfo } from "passport-local";
 import { WriteError } from "mongodb";
 const request = require("express-validator");
 
-
-/**
- * GET /login
- * Login page.
- */
-export let getLogin = async (req: Request, res: Response) => {
-  if (req.user) {
-    return res.redirect("/");
-  }
-  res.render("account/login", {
-    title: "Login"
-  });
-};
-
 /**
  * POST /login
  * Sign in using email and password.
@@ -34,44 +20,19 @@ export let postLogin = async (req: Request, res: Response, next: NextFunction) =
   const errors = req.validationErrors();
 
   if (errors) {
-    req.flash("errors", errors);
-    return res.redirect("/login");
+    return res.status(400).json(errors);
   }
 
   passport.authenticate("local", (err: Error, user: UserModel, info: LocalStrategyInfo) => {
     if (err) { return next(err); }
     if (!user) {
-      req.flash("errors", info.message);
-      return res.redirect("/login");
+      res.status(404).json("User not found");
     }
     req.logIn(user, (err) => {
       if (err) { return next(err); }
-      req.flash("success", { msg: "Success! You are logged in." });
-      res.redirect(req.session.returnTo || "/");
+      res.status(200).end();
     });
   })(req, res, next);
-};
-
-/**
- * GET /logout
- * Log out.
- */
-export let logout = async (req: Request, res: Response) => {
-  req.logout();
-  res.redirect("/");
-};
-
-/**
- * GET /signup
- * Signup page.
- */
-export let getSignup = async (req: Request, res: Response) => {
-  if (req.user) {
-    return res.redirect("/");
-  }
-  res.render("account/signup", {
-    title: "Create Account"
-  });
 };
 
 /**
@@ -88,8 +49,7 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
   const errors = req.validationErrors();
 
   if (errors) {
-    req.flash("errors", errors);
-    return res.redirect("/signup");
+    return res.status(500).json(errors);
   }
 
   const user = new User({
@@ -101,8 +61,7 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
   User.findOne({ email: req.body.email }, (err, existingUser) => {
     if (err) { return next(err); }
     if (existingUser) {
-      req.flash("errors", { msg: "Account with that email address already exists." });
-      return res.redirect("/signup");
+      res.status(409).send("User already exists");
     }
     user.save((err) => {
       if (err) { return next(err); }
@@ -110,19 +69,9 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
         if (err) {
           return next(err);
         }
-        res.redirect("/");
+        res.status(201).send();
       });
     });
-  });
-};
-
-/**
- * GET /account
- * Profile page.
- */
-export let getAccount = async (req: Request, res: Response) => {
-  res.render("account/profile", {
-    title: "Account Management"
   });
 };
 
@@ -137,8 +86,7 @@ export let postUpdateProfile = async (req: Request, res: Response, next: NextFun
   const errors = req.validationErrors();
 
   if (errors) {
-    req.flash("errors", errors);
-    return res.redirect("/account");
+    return res.status(400).json(errors);
   }
 
   User.findById(req.user.id, (err, user: UserModel) => {
@@ -151,13 +99,11 @@ export let postUpdateProfile = async (req: Request, res: Response, next: NextFun
     user.save((err: WriteError) => {
       if (err) {
         if (err.code === 11000) {
-          req.flash("errors", { msg: "The email address you have entered is already associated with an account." });
-          return res.redirect("/account");
+          return res.status(504).json("The email address you have entered is already associated with an account.");
         }
         return next(err);
       }
-      req.flash("success", { msg: "Profile information has been updated." });
-      res.redirect("/account");
+      res.status(201);
     });
   });
 };
