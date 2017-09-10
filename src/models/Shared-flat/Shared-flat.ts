@@ -106,6 +106,9 @@ sharedFlatSchema.methods.makeJoinRequest = async function makeJoinRequest(this: 
         if (resident.id === askingUser.id) throw new Error("You're already member of this shared flat");
     });
 
+    const memberOf = await SharedFlat.findOne({ "residents.id": { $in: askingUser.id }});
+    if (undefined != memberOf) throw new Error("You are already a member of a shared flat");
+
     const joinRequest = new JoinRequest(createJoinRequest(askingUser, this));
 
     // catch multiple requests
