@@ -30,35 +30,42 @@ export const getSharedFlat =
  */
 export const createSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        // @todo check request body validity
-        // req.assert("email", "Email is not valid").isEmail();
-        // req.assert("password", "Password must be at least 4 characters long").len({ min: 4 });
-        // req.assert("confirmPassword", "Passwords do not match").equals(req.body.password);
-        // req.assert("age", "Age is incorrect").isInt();
-        // req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+        req.assert("name", "Name is not valid").notEmpty();
+        req.assert("size", "Size must be an integer").isInt();
+        req.assert("pricePerMonth", "PricePerMonth must be an integer").isInt();
+        req.assert("street", "Location is not valid").notEmpty();
+        req.assert("postalCode", "Location is not valid").isInt();
+        req.assert("city", "Location is not valid").notEmpty();
+        req.assert("country", "Location is not valid").notEmpty();
 
-        // const errors = req.validationErrors();
+        const errors = req.validationErrors();
+        if (errors) return res.status(400).json(errors);
 
-        // @todo check if user is already in a shared flat
+        try {
+            // find if user is already a member of a shared flat
+            const copy = await SharedFlat.findOne({ "residents.id": { $in: [req.user.id] } });
+            if (undefined != copy) throw new Error("You are already a member of a shared flat.");
 
-        const sharedFlat = new SharedFlat({
-            name: req.body.name,
-            residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
-            size: req.body.size || 4,
-            pricePerMonth: req.body.pricePerMonth,
-            // @todo check location validity
-            location: req.body.location || {
-                street: "east street",
-                postalCode: 30039,
-                city: "NY",
-                country: "USA"
-            }
-        });
+            const sharedFlat = new SharedFlat({
+                name: req.body.name,
+                residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
+                size: req.body.size,
+                pricePerMonth: req.body.pricePerMonth,
 
-        sharedFlat.save((err: WriteError) => {
-            if (err) { return next(err); }
-            res.status(201).json({ message: "Created" });
-        });
+                // @todo check location validity
+                location: {
+                    street: req.body.street,
+                    postalCode: req.body.postalCode,
+                    city: req.body.city,
+                    country: req.body.country
+                }
+            });
+
+            await sharedFlat.save();
+            res.status(201).json(createResponse("Shared flat successfully created"));
+        } catch (err) {
+            res.status(500).json(createResponse(err));
+        }
     });
 
 /**
@@ -67,13 +74,13 @@ export const createSharedFlat =
 export const deleteSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
         if (!req.params.id) {
-            return res.status(400).json({ message: "Missing {id} param"});
+            return res.status(400).json(createResponse("Missing {id} param"));
         }
 
         try {
             const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
             if (!sharedFlat.shouldBeAdministrateBy(req.user)) {
-                return res.status(403).json({ message: "Insufisant permission" });
+                return res.status(403).json(createResponse("Insufisant permission"));
             }
 
             await SharedFlat.findByIdAndRemove(req.params.id);
