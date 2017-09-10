@@ -6,11 +6,12 @@ services:
     container_name: nodejs-api
     ports: 
       - "3000:3000"
+      - "9229:9229"
     volumes: 
       - ./:/code
     links:
       - db
-    command: yarn start
+    command: yarn run watch-debug
   db:
     image: "mongo:3.0.15"
     restart: always

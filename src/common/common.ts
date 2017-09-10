@@ -7,8 +7,6 @@ import { Request, Response, NextFunction } from "express";
  * @param fn
  */
 export const asyncMiddleware = (fn: Function) =>
-  (req: Request, res: Response, next: NextFunction) => {
-    Promise
-      .resolve(fn(req, res, next))
-      .catch(next);
-};
+    (req: Request, res: Response, next: NextFunction) => {
+        Promise.resolve(fn(req, res, next)).catch(next);
+    };

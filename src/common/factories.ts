@@ -1,31 +1,4 @@
-import * as mongoose from "mongoose";
-import { UserModel } from "../models/User";
-
-export type NotificationType = "alert" | "success" | "info";
-
-export interface INotification {
-    message: string;
-    type: NotificationType;
-    createdAt: Date;
-    readed: boolean;
-}
-
-export const createNotification = (message: string, type: NotificationType): INotification =>
-    ({ message, type, createdAt: new Date(), readed: false });
-
-
-export const createResponse = (message: string) => ({ message });
-
-
-export type JoinRequestStatus = "pending" | "accepted" | "rejected";
-
-export type JoinRequest = {
-    id: string
-    doAt: Date
-    status: JoinRequestStatus
+export const format = (message: string): { message: string } => {
+    if (typeof message !== "string") message = message + "";
+    return { message };
 };
-export const createJoinRequest = (resident: UserModel): JoinRequest => ({
-    id: resident.id,
-    status: "pending",
-    doAt: new Date(),
-});

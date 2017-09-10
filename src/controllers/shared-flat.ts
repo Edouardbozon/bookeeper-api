@@ -4,24 +4,25 @@ import { Request, Response, NextFunction } from "express";
 import { LocalStrategyInfo } from "passport-local";
 import { WriteError } from "mongodb";
 import { asyncMiddleware } from "../common/common";
-import { createResponse } from "../common/factories";
+import { format } from "../common/factories";
 
-import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat";
+import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat/Shared-flat";
+import { default as User, UserModel } from "../models/User/User";
 
 /**
  * GET /shared-flat
  */
 export const getSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        SharedFlat.find(
-            (err: any, sharedFlats: Document[]) => {
-                if (err) { return next(err); }
-                if (sharedFlats.length === 0) {
-                    return res.status(404).json({ message: "Not Found" });
-                }
-                res.status(200).json(sharedFlats);
+        try {
+            const sharedFlats = await SharedFlat.find({}) as SharedFlatModel[];
+            if (sharedFlats.length === 0) {
+                return res.status(404).json(format("No Shared flat found"));
             }
-        );
+            res.status(200).json(sharedFlats);
+        } catch (err) {
+            res.status(500).json(format(err));
+        }
     });
 
 /**
@@ -29,33 +30,42 @@ export const getSharedFlat =
  */
 export const createSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        // @todo check request body validity
-        // req.assert("email", "Email is not valid").isEmail();
-        // req.assert("password", "Password must be at least 4 characters long").len({ min: 4 });
-        // req.assert("confirmPassword", "Passwords do not match").equals(req.body.password);
-        // req.assert("age", "Age is incorrect").isInt();
-        // req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+        req.assert("name", "Name is not valid").notEmpty();
+        req.assert("size", "Size must be an integer").isInt();
+        req.assert("pricePerMonth", "PricePerMonth must be an integer").isInt();
+        req.assert("street", "Location is not valid").notEmpty();
+        req.assert("postalCode", "Location is not valid").isInt();
+        req.assert("city", "Location is not valid").notEmpty();
+        req.assert("country", "Location is not valid").notEmpty();
 
-        // const errors = req.validationErrors();
+        const errors = req.validationErrors();
+        if (errors) return res.status(400).json(errors);
 
-        const sharedFlat = new SharedFlat({
-            name: req.body.name,
-            residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
-            size: req.body.size || 4,
-            pricePerMonth: req.body.pricePerMonth,
-            // @todo check location validity
-            location: req.body.location || {
-                street: "east street",
-                postalCode: 30039,
-                city: "NY",
-                country: "USA"
-            }
-        });
+        try {
+            // find if user is already a member of a shared flat
+            const copy = await SharedFlat.findOne({ "residents.id": { $in: [req.user.id] } });
+            if (undefined != copy) throw new Error("You are already a member of a shared flat.");
 
-        sharedFlat.save((err: WriteError) => {
-            if (err) { return next(err); }
-            res.status(201).json({ message: "Created" });
-        });
+            const sharedFlat = new SharedFlat({
+                name: req.body.name,
+                residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
+                size: req.body.size,
+                pricePerMonth: req.body.pricePerMonth,
+
+                // @todo check location validity
+                location: {
+                    street: req.body.street,
+                    postalCode: req.body.postalCode,
+                    city: req.body.city,
+                    country: req.body.country
+                }
+            });
+
+            await sharedFlat.save();
+            res.status(201).json(format("Shared flat successfully created"));
+        } catch (err) {
+            res.status(500).json(format(err));
+        }
     });
 
 /**
@@ -63,51 +73,21 @@ export const createSharedFlat =
  */
 export const deleteSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        if (!req.param("id")) {
-            return res.status(400).json({ message: "Missing {id} param"});
+        if (!req.params.id) {
+            return res.status(400).json(format("Missing {id} param"));
         }
 
-        SharedFlat.findById(req.param("id"), (err, sharedFlat: SharedFlatModel) => {
-            if (err) { return next(); }
-            if (!sharedFlat) {
-                return res.status(404).json({ message: "Shared flat not found"});
-            }
-
+        try {
+            const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
             if (!sharedFlat.shouldBeAdministrateBy(req.user)) {
-                return res.status(403).json({ message: "Insufisant permission"});
+                return res.status(403).json(format("Insufisant permission"));
             }
 
-            SharedFlat.findByIdAndRemove(req.param("id"), (err) => {
-                if (err) { return next(); }
-                res.status(204).end();
-            });
-        });
-    });
-
-/**
- * POST /shared-flat/{id}/join
- */
-export const postJoinSharedFlatRequest =
-    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        if (!req.param("id")) {
-            return res.status(400).json(createResponse("Missing {id} param"));
+            await SharedFlat.findByIdAndRemove(req.params.id);
+            res.status(204).json(format("Shared flat successfully deleted"));
+        } catch (err) {
+            res.status(500).json(format(err));
         }
-
-        SharedFlat.findById(req.param("id"), (err, sharedFlat: SharedFlatModel) => {
-            if (err) { return next(); }
-            if (!sharedFlat) {
-                return res.status(404).json(createResponse("Shared flat not found"));
-            }
-
-            sharedFlat
-                .makeJoinRequest(req.user)
-                .then(() => {
-                    res.status(200).json(createResponse("Request succesfully posted"));
-                })
-                .catch(err => {
-                    res.status(500).json(createResponse(err));
-                });
-        });
     });
 
 

@@ -32,6 +32,7 @@ import * as userController from "./controllers/user";
 import * as apiController from "./controllers/api";
 import * as contactController from "./controllers/contact";
 import * as sharedFlatController from "./controllers/shared-flat";
+import * as joinRequestController from "./controllers/join-request";
 
 /**
  * API keys and Passport configuration.
@@ -46,12 +47,12 @@ const app = express();
 /**
  * Connect to MongoDB.
  */
-// mongoose.Promise = global.Promise;
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI);
+(<any>mongoose).Promise = Promise;
 
 mongoose.connection.on("error", () => {
-  console.log("MongoDB connection error. Please make sure MongoDB is running.");
-  process.exit();
+    console.log("MongoDB connection error. Please make sure MongoDB is running.");
+    process.exit();
 });
 
 
@@ -66,13 +67,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(expressValidator());
 app.use(session({
-  resave: true,
-  saveUninitialized: true,
-  secret: process.env.SESSION_SECRET,
-  store: new MongoStore({
-    url: process.env.MONGODB_URI || process.env.MONGOLAB_URI,
-    autoReconnect: true
-  })
+    resave: true,
+    saveUninitialized: true,
+    secret: process.env.SESSION_SECRET,
+    store: new MongoStore({
+        url: process.env.MONGODB_URI || process.env.MONGOLAB_URI,
+        autoReconnect: true
+    })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -80,23 +81,23 @@ app.use(flash());
 app.use(lusca.xframe("SAMEORIGIN"));
 app.use(lusca.xssProtection(true));
 app.use((req, res, next) => {
-  res.locals.user = req.user;
-  next();
+    res.locals.user = req.user;
+    next();
 });
 
 app.use((req, res, next) => {
-  // After successful login, redirect back to the intended page
-  if (!req.user &&
-    req.path !== "/login" &&
-    req.path !== "/signup" &&
-    !req.path.match(/^\/auth/) &&
-    !req.path.match(/\./)) {
-    req.session.returnTo = req.path;
-  } else if (req.user &&
-    req.path == "/account") {
-    req.session.returnTo = req.path;
-  }
-  next();
+    // After successful login, redirect back to the intended page
+    if (!req.user &&
+        req.path !== "/login" &&
+        req.path !== "/signup" &&
+        !req.path.match(/^\/auth/) &&
+        !req.path.match(/\./)) {
+        req.session.returnTo = req.path;
+    } else if (req.user &&
+        req.path == "/account") {
+        req.session.returnTo = req.path;
+    }
+    next();
 });
 
 /**
@@ -127,14 +128,37 @@ app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthor
 app.get("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.getSharedFlat);
 app.post("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.createSharedFlat);
 app.delete("/api/shared-flat/:id", passportConfig.isAuthenticated, sharedFlatController.deleteSharedFlat);
-app.post("/api/shared-flat/:id/join", passportConfig.isAuthenticated, sharedFlatController.postJoinSharedFlatRequest);
+
+/**
+ * Join requests
+ */
+app.get(
+    "/api/shared-flat/:id/join-request",
+    passportConfig.isAuthenticated,
+    joinRequestController.getJoinSharedFlatRequest
+);
+app.post(
+    "/api/shared-flat/:id/join-request",
+    passportConfig.isAuthenticated,
+    joinRequestController.postJoinSharedFlatRequest
+);
+app.post(
+    "/api/shared-flat/:sharedFlatId/join-request/:joinRequestId/validate",
+    passportConfig.isAuthenticated,
+    joinRequestController.postValidateJoinRequest
+);
+app.post(
+    "/api/shared-flat/:sharedFlatId/join-request/:joinRequestId/reject",
+    passportConfig.isAuthenticated,
+    joinRequestController.postRejectJoinRequest
+);
 
 /**
  * OAuth authentication routes. (Sign in)
  */
 app.get("/auth/facebook", passport.authenticate("facebook", { scope: ["email", "public_profile"] }));
 app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRedirect: "/login" }), (req, res) => {
-  res.status(200).end();
+    res.status(200).end();
 });
 
 
@@ -147,8 +171,8 @@ app.use(errorHandler());
  * Start Express server.
  */
 app.listen(app.get("port"), () => {
-  console.log(("  App is running at http://localhost:%d in %s mode"), app.get("port"), app.get("env"));
-  console.log("  Press CTRL-C to stop\n");
+    console.log(("  App is running at http://localhost:%d in %s mode"), app.get("port"), app.get("env"));
+    console.log("  Press CTRL-C to stop\n");
 });
 
 module.exports = app;
