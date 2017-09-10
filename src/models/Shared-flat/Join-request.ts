@@ -20,7 +20,7 @@ export const createJoinRequest = (resident: UserModel, sharedFlat: SharedFlatMod
 
 export type JoinRequestModel = mongoose.Document & IJoinRequest & {
     validateRequest: () => Promise<void>
-    refuseRequest: () => Promise<void>
+    rejectRequest: () => Promise<void>
 };
 
 export const joinRequestSchema = new mongoose.Schema({
@@ -30,24 +30,14 @@ export const joinRequestSchema = new mongoose.Schema({
     status: { type: String, default: "pending" },
 });
 
-joinRequestSchema.methods.validateRequest = function (this: JoinRequestModel): Promise<void> {
-    return new Promise((resolve, reject) => {
-        this.status = "accepted";
-        this.save((err: any) => {
-            if (err) reject(err);
-            resolve();
-        });
-    });
+joinRequestSchema.methods.validateRequest = async function (this: JoinRequestModel) {
+    this.status = "accepted";
+    await this.save();
 };
 
-joinRequestSchema.methods.refuseRequest = function (this: JoinRequestModel): Promise<void> {
-    return new Promise((resolve, reject) => {
-        this.status = "rejected";
-        this.save((err: any) => {
-            if (err) reject(err);
-            resolve();
-        });
-    });
+joinRequestSchema.methods.rejectRequest = async function (this: JoinRequestModel) {
+    this.status = "rejected";
+    await this.save();
 };
 
 const JoinRequest = mongoose.model("JoinRequest", joinRequestSchema);

@@ -10,6 +10,7 @@ import {
 } from "./Notification";
 
 import {
+  default as JoinRequest,
   createJoinRequest,
   JoinRequestModel,
   IJoinRequest,
@@ -87,23 +88,26 @@ userSchema.pre("save", function save(this: UserModel, next) {
   });
 });
 
-userSchema.methods.acceptOrReject = function (
+userSchema.methods.acceptOrReject = async function (
   this: UserModel,
   joinReqId: string,
-  sharedFlat: SharedFlatModel,
+  sharedFlatId: string,
   status: JoinRequestStatus
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    SharedFlat.findById(joinReqId, (err: any, sharedFlat: SharedFlatModel) => {
-      if (err) reject(err);
-      if (null === sharedFlat) reject("Shared flat not found");
-      if (this.id !== sharedFlat.getAdmin().id) reject("Only admin should validate a join request");
+) {
+  const sharedFlat = await SharedFlat.findById(sharedFlatId) as SharedFlatModel;
+  if (undefined == sharedFlat) throw new Error("Shared flat not found");
+  if (this.id !== sharedFlat.getAdmin().id) throw new Error("Only admin should validate a join request");
 
-      this.acceptOrReject(joinReqId, sharedFlat, status)
-        .then(() => resolve())
-        .catch((err: any) => reject(err));
-    });
-  });
+  const joinRequest = await JoinRequest.findById(joinReqId) as JoinRequestModel;
+  if (undefined == sharedFlat) throw new Error("Join request not found");
+
+  if (status === "accepted") {
+    await joinRequest.validateRequest();
+  } else if (status === "rejected") {
+    await joinRequest.rejectRequest();
+  } else {
+    throw new Error(`Logical exception, request must be {accepted} or {rejected}, {${status}} given`);
+  }
 };
 
 userSchema.methods.addNotification = function (this: UserModel, message: string, type: NotificationType): Promise<void> {

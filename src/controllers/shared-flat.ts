@@ -121,9 +121,8 @@ export const postValidateJoinRequest =
         }
 
         try {
-            const user = await User.findById(req.user.id) as UserModel;
-            const sharedFlat = await SharedFlat.findById(req.user.sharedFlatId) as SharedFlatModel;
-            await user.acceptOrReject(req.params.joinRequestId, sharedFlat, "accepted");
+            const user = (req.user as UserModel);
+            await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "accepted");
             res.status(200).json(createResponse("Request succesfully posted"));
         } catch (err) {
             res.status(500).json(createResponse(err));
