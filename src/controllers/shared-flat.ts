@@ -4,7 +4,7 @@ import { Request, Response, NextFunction } from "express";
 import { LocalStrategyInfo } from "passport-local";
 import { WriteError } from "mongodb";
 import { asyncMiddleware } from "../common/common";
-import { createResponse } from "../common/factories";
+import { format } from "../common/factories";
 
 import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat/Shared-flat";
 import { default as User, UserModel } from "../models/User/User";
@@ -14,15 +14,15 @@ import { default as User, UserModel } from "../models/User/User";
  */
 export const getSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        SharedFlat.find(
-            (err: any, sharedFlats: Document[]) => {
-                if (err) { return next(err); }
-                if (sharedFlats.length === 0) {
-                    return res.status(404).json({ message: "Not Found" });
-                }
-                res.status(200).json(sharedFlats);
+        try {
+            const sharedFlats = await SharedFlat.find({}) as SharedFlatModel[];
+            if (sharedFlats.length === 0) {
+                return res.status(404).json(format("No Shared flat found"));
             }
-        );
+            res.status(200).json(sharedFlats);
+        } catch (err) {
+            res.status(500).json(format(err));
+        }
     });
 
 /**
@@ -62,9 +62,9 @@ export const createSharedFlat =
             });
 
             await sharedFlat.save();
-            res.status(201).json(createResponse("Shared flat successfully created"));
+            res.status(201).json(format("Shared flat successfully created"));
         } catch (err) {
-            res.status(500).json(createResponse(err));
+            res.status(500).json(format(err));
         }
     });
 
@@ -74,58 +74,19 @@ export const createSharedFlat =
 export const deleteSharedFlat =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
         if (!req.params.id) {
-            return res.status(400).json(createResponse("Missing {id} param"));
+            return res.status(400).json(format("Missing {id} param"));
         }
 
         try {
             const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
             if (!sharedFlat.shouldBeAdministrateBy(req.user)) {
-                return res.status(403).json(createResponse("Insufisant permission"));
+                return res.status(403).json(format("Insufisant permission"));
             }
 
             await SharedFlat.findByIdAndRemove(req.params.id);
-            res.status(204).json(createResponse("Shared flat successfully deleted"));
+            res.status(204).json(format("Shared flat successfully deleted"));
         } catch (err) {
-            res.status(500).json(createResponse(err));
-        }
-    });
-
-/**
- * POST /shared-flat/{id}/join
- */
-export const postJoinSharedFlatRequest =
-    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        if (!req.params.id) {
-            return res.status(400).json(createResponse("Missing {id} param"));
-        }
-
-        try {
-            const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
-            await sharedFlat.makeJoinRequest(req.user);
-            res.status(200).json(createResponse("Request succesfully posted"));
-        } catch (err) {
-            res.status(500).json(createResponse(err));
-        }
-    });
-
-/**
- * POST /shared-flat/{sharedFlatId}/validate/{joinRequestId}
- */
-export const postValidateJoinRequest =
-    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-        if (!req.params.sharedFlatId) {
-            return res.status(400).json(createResponse("Missing {sharedFlatId} param"));
-        }
-        if (!req.params.joinRequestId) {
-            return res.status(400).json(createResponse("Missing {joinRequestId} param"));
-        }
-
-        try {
-            const user = (req.user as UserModel);
-            await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "accepted");
-            res.status(200).json(createResponse("Request succesfully posted"));
-        } catch (err) {
-            res.status(500).json(createResponse(err));
+            res.status(500).json(format(err));
         }
     });
 

@@ -42,8 +42,8 @@ export type UserModel = mongoose.Document & {
     },
 
     acceptOrReject: (joinReqId: string, sharedFlat: SharedFlatModel, status: JoinRequestStatus) => Promise<void>
-    addNotification: (message: string, type: NotificationType) => Promise<void>;
-    comparePassword: (candidatePassword: string, cb: (err: any, isMatch: any) => {}) => void,
+    addNotification: (message: string, type: NotificationType) => Promise<void>
+    comparePassword: (candidatePassword: string, cb: (err: any, isMatch: any) => {}) => void
     gravatar: (size: number) => string
 };
 
@@ -77,18 +77,18 @@ const userSchema = new mongoose.Schema({
  * Password hash middleware.
  */
 userSchema.pre("save", function save(this: UserModel, next) {
-    if (!this.isModified("password")) { return next(); }
+    if (!this.isModified("password")) return next();
     bcrypt.genSalt(10, (err, salt) => {
-        if (err) { return next(err); }
+        if (err) return next(err);
         bcrypt.hash(this.password, salt, undefined, (err: mongoose.Error, hash) => {
-            if (err) { return next(err); }
+            if (err) return next(err);
             this.password = hash;
             next();
         });
     });
 });
 
-userSchema.methods.acceptOrReject = async function (
+userSchema.methods.acceptOrReject = async function(
     this: UserModel,
     joinReqId: string,
     sharedFlatId: string,
@@ -96,7 +96,7 @@ userSchema.methods.acceptOrReject = async function (
 ) {
     const sharedFlat = await SharedFlat.findById(sharedFlatId) as SharedFlatModel;
     if (undefined == sharedFlat) throw new Error("Shared flat not found");
-    if (this.id !== sharedFlat.getAdmin().id) throw new Error("Only admin should validate a join request");
+    if (this.id !== sharedFlat.getAdmin().id) throw new Error("Only shared flat admin should manage join requests");
 
     const joinRequest = await JoinRequest.findById(joinReqId) as JoinRequestModel;
     if (undefined == sharedFlat) throw new Error("Join request not found");
@@ -110,7 +110,7 @@ userSchema.methods.acceptOrReject = async function (
     }
 };
 
-userSchema.methods.addNotification = function (this: UserModel, message: string, type: NotificationType): Promise<void> {
+userSchema.methods.addNotification = function(this: UserModel, message: string, type: NotificationType): Promise<void> {
     return new Promise((resolve, reject) => {
         const notification = new Notification(createNotification(message, type, this));
         notification.save((err: any, user: UserModel) => {
@@ -120,7 +120,7 @@ userSchema.methods.addNotification = function (this: UserModel, message: string,
     });
 };
 
-userSchema.methods.comparePassword = function (
+userSchema.methods.comparePassword = function(
     this: UserModel,
     candidatePassword: string, cb: (err: any, isMatch: any) => {}
 ) {
@@ -133,7 +133,7 @@ userSchema.methods.comparePassword = function (
 /**
  * Helper method for getting user's gravatar.
  */
-userSchema.methods.gravatar = function (size: number) {
+userSchema.methods.gravatar = function(size: number) {
     if (!size) {
         size = 200;
     }
