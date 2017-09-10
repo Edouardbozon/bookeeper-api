@@ -35,14 +35,23 @@ There is a lot of things to do:
 1. Switch the app in full api mode
 2. Make a full crud for public shared flats routes and enhance domain logic
     - :white_check_mark: Add ability to do a request to join a shared flat
+    - :white_check_mark: Add user verification to create or join a shared flat
+    - Add shared flat nested routes for join request actions
+        - Add list route
+        - Add ability to validate or refused a shared flat request for an admin
+        - Add delete join request action only available for the author
+    - Improve notification system to help user in those actions
+        - add user nested routes to manipulate notifications
     - Add ability to modify a shared flat by an admin
+        - add some user friendly fields like banner
     - Add query data validation to create a shared flat
-    - :white_check_mark: Add user verification to create or join a shared flat (user can only be in 1 shared flat)
     - Add single shared flat route detail as "profile" page for people that are outside
     - Add tests
-3. Add private shared flat functionnality (only navigable by the residents)
+3. Make residents shared flat functionnalities
     - Add list common expenses route
+        - show 
     - Add ability to add common expense 
+        - Maybe use event sourving solution to track expense history
     - Add tests
 4. [Further] Add geo search for shared flats to join them more easily
     - Maybe use Elasticsearch to provide geo-search ?
