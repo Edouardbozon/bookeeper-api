@@ -21,7 +21,7 @@ export const getJoinSharedFlatRequest =
 
         try {
             const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
-            const joinRequests = await JoinRequest.find({ sharedFlatId: { $in: [sharedFlat.id] }}) as JoinRequestModel[];
+            const joinRequests = await JoinRequest.find({ sharedFlatId: sharedFlat.id }) as JoinRequestModel[];
             res.status(200).json(joinRequests);
         } catch (err) {
             res.status(500).json(format(err));
