@@ -2,7 +2,7 @@ import * as async from "async";
 import * as crypto from "crypto";
 import * as nodemailer from "nodemailer";
 import * as passport from "passport";
-import { default as User, UserModel, AuthToken } from "../models/User";
+import { default as User, UserModel, AuthToken } from "../models/User/User";
 import { Request, Response, NextFunction } from "express";
 import { LocalStrategyInfo } from "passport-local";
 import { WriteError } from "mongodb";
@@ -58,12 +58,12 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
     age: req.body.age
   });
 
-  User.findOne({ email: req.body.email }, (err, existingUser) => {
+  User.findOne({ email: req.body.email }, (err: any, existingUser: UserModel) => {
     if (err) { return next(err); }
     if (existingUser) {
       res.status(409).send("User already exists");
     }
-    user.save((err) => {
+    user.save((err: any) => {
       if (err) { return next(err); }
       req.logIn(user, (err) => {
         if (err) {
@@ -89,7 +89,7 @@ export let postUpdateProfile = async (req: Request, res: Response, next: NextFun
     return res.status(400).json(errors);
   }
 
-  User.findById(req.user.id, (err, user: UserModel) => {
+  User.findById(req.user.id, (err: any, user: UserModel) => {
     if (err) { return next(err); }
     user.email = req.body.email || "";
     user.profile.name = req.body.name || "";
@@ -123,7 +123,7 @@ export let postUpdatePassword = async (req: Request, res: Response, next: NextFu
     return res.redirect("/account");
   }
 
-  User.findById(req.user.id, (err, user: UserModel) => {
+  User.findById(req.user.id, (err: any, user: UserModel) => {
     if (err) { return next(err); }
     user.password = req.body.password;
     user.save((err: WriteError) => {
@@ -139,7 +139,7 @@ export let postUpdatePassword = async (req: Request, res: Response, next: NextFu
  * Delete user account.
  */
 export let postDeleteAccount = async (req: Request, res: Response, next: NextFunction) => {
-  User.remove({ _id: req.user.id }, (err) => {
+  User.remove({ _id: req.user.id }, (err: any) => {
     if (err) { return next(err); }
     req.logout();
     req.flash("info", { msg: "Your account has been deleted." });
@@ -153,7 +153,7 @@ export let postDeleteAccount = async (req: Request, res: Response, next: NextFun
  */
 export let getOauthUnlink = async (req: Request, res: Response, next: NextFunction) => {
   const provider = req.params.provider;
-  User.findById(req.user.id, (err, user: any) => {
+  User.findById(req.user.id, (err: any, user: any) => {
     if (err) { return next(err); }
     user[provider] = undefined;
     user.tokens = user.tokens.filter((token: AuthToken) => token.kind !== provider);

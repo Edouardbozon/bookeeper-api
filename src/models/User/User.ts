@@ -2,9 +2,25 @@ import * as bcrypt from "bcrypt-nodejs";
 import * as crypto from "crypto";
 import * as mongoose from "mongoose";
 
-import { INotification, NotificationType, createNotification } from "../common/factories";
+import {
+  default as Notification,
+  INotification,
+  NotificationType,
+  createNotification
+} from "./Notification";
 
-export type NotificationModel = mongoose.Document & INotification;
+import {
+  createJoinRequest,
+  JoinRequestModel,
+  IJoinRequest,
+  joinRequestSchema,
+  JoinRequestStatus
+} from "../Shared-flat/Join-request";
+
+import {
+  default as SharedFlat,
+  SharedFlatModel
+} from "../Shared-flat/Shared-flat";
 
 export type UserModel = mongoose.Document & {
   email: string,
@@ -24,8 +40,7 @@ export type UserModel = mongoose.Document & {
     picture: string
   },
 
-  notifications: INotification[]
-
+  acceptOrReject: (joinReqId: string, sharedFlat: SharedFlatModel, status: JoinRequestStatus) => Promise<void>
   addNotification: (message: string, type: NotificationType) => Promise<void>;
   comparePassword: (candidatePassword: string, cb: (err: any, isMatch: any) => {}) => void,
   gravatar: (size: number) => string
@@ -35,13 +50,6 @@ export type AuthToken = {
   accessToken: string,
   kind: string
 };
-
-const notificationSchema = new mongoose.Schema({
-    message: String,
-    type: String,
-    createdAt: { type: Date, default: Date.now },
-    readed: { type: Boolean, default: false }
-});
 
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true },
@@ -55,8 +63,6 @@ const userSchema = new mongoose.Schema({
   google: String,
   tokens: Array,
 
-  notifications: [notificationSchema],
-
   profile: {
     name: String,
     gender: String,
@@ -69,30 +75,51 @@ const userSchema = new mongoose.Schema({
 /**
  * Password hash middleware.
  */
-userSchema.pre("save", function save(next) {
-  const user = this;
-  if (!user.isModified("password")) { return next(); }
+userSchema.pre("save", function save(this: UserModel, next) {
+  if (!this.isModified("password")) { return next(); }
   bcrypt.genSalt(10, (err, salt) => {
     if (err) { return next(err); }
-    bcrypt.hash(user.password, salt, undefined, (err: mongoose.Error, hash) => {
+    bcrypt.hash(this.password, salt, undefined, (err: mongoose.Error, hash) => {
       if (err) { return next(err); }
-      user.password = hash;
+      this.password = hash;
       next();
     });
   });
 });
 
-userSchema.methods.addNotification = function (message: string, type: NotificationType): Promise<void> {
+userSchema.methods.acceptOrReject = function (
+  this: UserModel,
+  joinReqId: string,
+  sharedFlat: SharedFlatModel,
+  status: JoinRequestStatus
+): Promise<void> {
   return new Promise((resolve, reject) => {
-    this.notifications.push(createNotification(message, type));
-    this.save((err: any, user: UserModel) => {
+    SharedFlat.findById(joinReqId, (err: any, sharedFlat: SharedFlatModel) => {
+      if (err) reject(err);
+      if (null === sharedFlat) reject("Shared flat not found");
+      if (this.id !== sharedFlat.getAdmin().id) reject("Only admin should validate a join request");
+
+      this.acceptOrReject(joinReqId, sharedFlat, status)
+        .then(() => resolve())
+        .catch((err: any) => reject(err));
+    });
+  });
+};
+
+userSchema.methods.addNotification = function (this: UserModel, message: string, type: NotificationType): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const notification = new Notification(createNotification(message, type, this));
+    notification.save((err: any, user: UserModel) => {
       if (err) reject(err);
       resolve();
     });
   });
 };
 
-userSchema.methods.comparePassword = function (candidatePassword: string, cb: (err: any, isMatch: any) => {}) {
+userSchema.methods.comparePassword = function (
+  this: UserModel,
+  candidatePassword: string, cb: (err: any, isMatch: any) => {}
+) {
   bcrypt.compare(candidatePassword, this.password, (err: mongoose.Error, isMatch: boolean) => {
     cb(err, isMatch);
   });
@@ -113,6 +140,5 @@ userSchema.methods.gravatar = function (size: number) {
   return `https://gravatar.com/avatar/${md5}?s=${size}&d=retro`;
 };
 
-// export const User: UserType = mongoose.model<UserType>('User', userSchema);
 const User = mongoose.model("User", userSchema);
 export default User;
