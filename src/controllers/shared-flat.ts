@@ -42,9 +42,12 @@ export const createSharedFlat =
         if (errors) return res.status(400).json(errors);
 
         try {
+            const uniqName = await SharedFlat.findOne({ name: req.body.name });
+            if (undefined != uniqName) throw new Error("Name already exists");
+
             // find if user is already a member of a shared flat
-            const copy = await SharedFlat.findOne({ "residents.id": { $in: [req.user.id] } });
-            if (undefined != copy) throw new Error("You are already a member of a shared flat.");
+            const memberOf = await SharedFlat.findOne({ "residents.id": req.user.id });
+            if (undefined != memberOf) throw new Error("You are already a member of a shared flat.");
 
             const sharedFlat = new SharedFlat({
                 name: req.body.name,
