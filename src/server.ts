@@ -29,10 +29,11 @@ dotenv.config({ path: ".env.example" });
  * Controllers (route handlers).
  */
 import * as userController from "./controllers/user";
-import * as apiController from "./controllers/api";
+import * as apiController from "./controllers/facebook";
 import * as contactController from "./controllers/contact";
 import * as sharedFlatController from "./controllers/shared-flat";
 import * as joinRequestController from "./controllers/join-request";
+import * as eventController from "./controllers/event";
 
 /**
  * API keys and Passport configuration.
@@ -151,6 +152,20 @@ app.post(
     "/api/shared-flat/:sharedFlatId/join-request/:joinRequestId/reject",
     passportConfig.isAuthenticated,
     joinRequestController.postRejectJoinRequest
+);
+
+/**
+ * Events
+ */
+app.get(
+    "/api/shared-flat/:id/event",
+    passportConfig.isAuthenticated,
+    eventController.getEventList
+);
+app.post(
+    "/api/shared-flat/:id/event",
+    passportConfig.isAuthenticated,
+    eventController.postEvent
 );
 
 /**
