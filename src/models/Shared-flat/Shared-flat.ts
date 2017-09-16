@@ -46,6 +46,7 @@ export type SharedFlatModel = mongoose.Document & {
     makeJoinRequest: (askingUser: UserModel) => Promise<void>
     computeResidentsYearsRate: (residents: UserModel[]) => number
     shouldBeAdministrateBy: (user: UserModel) => boolean
+    isMember: (user: UserModel) => boolean
 };
 
 export type SharedFlatDocument = mongoose.Document & {
@@ -126,6 +127,13 @@ sharedFlatSchema.methods.makeJoinRequest = async function makeJoinRequest(this: 
  */
 sharedFlatSchema.methods.getAdmin = function getAdmin(this: SharedFlatModel): Resident {
     return this.residents.filter((resident: Resident) => resident.role === "admin")[0];
+};
+
+/**
+ * Check if given user is member of this shared flat
+ */
+sharedFlatSchema.methods.isMember = function isMember(this: SharedFlatModel, user: UserModel): boolean {
+    return this.residents.filter((resident: Resident) => resident.id !== user.id).length === 1;
 };
 
 /**
