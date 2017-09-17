@@ -56,9 +56,8 @@ export type SharedFlatModel = mongoose.Document & {
 
     getAdmin: () => Resident
     isMember: (user: UserModel) => boolean
-    rejectJoinReq: (admin: UserModel) => Promise<void>
     shouldBeAdministrateBy: (user: UserModel) => boolean
-    notifyAll: (message: string, type: NotificationType) => Promise<void>
+    notify: (message: string, type: NotificationType, avoid?: string[]) => Promise<void>
     makeJoinRequest: (askingUser: UserModel) => Promise<JoinRequestModel>
     computeResidentsYearsRate: (residents: UserModel[]) => number
     createEvent: (userId: string, eventType: EventType, amount: number) => Promise<EventModel>
@@ -115,7 +114,10 @@ sharedFlatSchema.pre("save", async function(this: SharedFlatModel, next: Functio
  * Create new sharedFlat join request
  * Add new shared flat admin notification
  */
-sharedFlatSchema.methods.makeJoinRequest = async function(this: SharedFlatModel, askingUser: UserModel): Promise<JoinRequestModel> {
+sharedFlatSchema.methods.makeJoinRequest = async function(
+    this: SharedFlatModel,
+    askingUser: UserModel
+): Promise<JoinRequestModel> {
     if (this.full) throw new Error("Shared flat is full");
 
     this.residents.forEach((resident: Resident) => {
@@ -131,10 +133,13 @@ sharedFlatSchema.methods.makeJoinRequest = async function(this: SharedFlatModel,
     const copy = await JoinRequest.findOne({ userId: askingUser.id });
     if (undefined != copy) throw new Error("Request already posted");
 
-    await joinRequest.save();
-
     const admin = await User.findById(this.getAdmin().id) as UserModel;
-    await admin.notify(`${askingUser.profile.name} asked to join your shared flat`, "info");
+
+    await Promise.all([
+        joinRequest.save(),
+        this.notify(`${askingUser.profile.name} asked to join your shared flat`, "info"),
+        admin.notify(`As ${this.name} admin you have to validate or reject ${askingUser.profile.name} join request`, "info"),
+    ]);
 
     return joinRequest;
 };
@@ -186,10 +191,13 @@ sharedFlatSchema.methods.createEvent = async function(
     const user = await User.findById(userId) as UserModel;
     if (!this.isMember(user)) throw new Error("Only shared flat resident can create an event");
 
-    const previousEvent = await Event.findOne({}, {}, { sort: { createdAt: -1 } }) as EventModel;
+    const previousEvent = await Event.findOne({}, {}, { sort: { createdAt: -1 }}) as EventModel;
     const event = new Event(createEvent(this, eventType, user, amount, previousEvent)) as EventModel;
 
-    await event.save();
+    await Promise.all([
+        this.notify(`New ${event.type} created by ${user.profile.name}`, "info"),
+        event.save(),
+    ]);
 
     return event;
 };
@@ -197,15 +205,17 @@ sharedFlatSchema.methods.createEvent = async function(
 /**
  * Notify all residents of a shared flat
  */
-sharedFlatSchema.methods.notifyAll = async function (this: SharedFlatModel, message: string, type: NotificationType): Promise<void> {
-    try {
-        const userIds = this.residents.map(resident => resident.id);
-        const users = await User.find({ id: { $in: userIds } }) as UserModel[];
-        for (const user of users) {
-            console.log(await user.notify(message, type));
-        }
-    } catch (err) {
-        console.log(err);
+sharedFlatSchema.methods.notify = async function (
+    this: SharedFlatModel,
+    message: string,
+    type: NotificationType,
+    avoid: string[] = []
+): Promise<void> {
+    const userIds = this.residents.map(resident => resident.id);
+    const users = await User.find({ id: { $in: userIds } }) as UserModel[];
+    for (const user of users) {
+        if (avoid.indexOf(user.id) > -1) continue;
+        else await user.notify(message, type);
     }
 };
 

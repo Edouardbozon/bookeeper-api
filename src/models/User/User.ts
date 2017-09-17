@@ -101,10 +101,24 @@ userSchema.methods.acceptOrReject = async function(
     const joinRequest = await JoinRequest.findById(joinReqId) as JoinRequestModel;
     if (undefined == joinRequest) throw new Error("Join request not found");
 
+    const askingUser = await User.findById(joinRequest.userId) as UserModel;
+
     if (status === "accepted") {
-        await joinRequest.validateRequest();
+        await Promise.all([
+            joinRequest.validateRequest(),
+            sharedFlat.notify(
+                `${this.profile.name} ${status} ${askingUser.profile.name} as resident of ${sharedFlat.name}`,
+                "success"
+            ),
+        ]);
     } else if (status === "rejected") {
-        await joinRequest.rejectRequest();
+        await Promise.all([
+            joinRequest.rejectRequest(),
+            sharedFlat.notify(
+                `${this.profile.name} ${status} ${askingUser.profile.name} as resident of ${sharedFlat.name}`,
+                "alert"
+            ),
+        ]);
     } else {
         throw new Error(`Logical exception, request must be {accepted} or {rejected}, {${status}} given`);
     }

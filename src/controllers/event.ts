@@ -56,8 +56,6 @@ export const postEvent =
             if (undefined == sharedFlat) throw new Error(`Shared flat with id {${req.params.id}} not found`);
 
             const event = await sharedFlat.createEvent(req.user.id, eventType, amount) as EventModel;
-            await sharedFlat.notifyAll(`${event.createdAt.toLocaleDateString()} New event created by ${req.user.email}`, "info");
-
             res.status(201).json(format("Event created"));
         } catch (err) {
             res.status(500).json(format(err));
