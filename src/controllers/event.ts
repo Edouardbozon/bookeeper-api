@@ -26,7 +26,7 @@ export const getEventList =
             if (undefined == sharedFlat) throw new Error(`Shared flat with id {${req.params.id}} not found`);
             if (!sharedFlat.isMember(req.user)) throw new Error("Only shared flat resident should see events");
 
-            let filters = { sharedFlatId: sharedFlat.id};
+            let filters = { sharedFlatId: sharedFlat.id };
             if (req.params.eventType) {
                 filters = R.merge(filters, { eventType: req.params.eventType });
             }
@@ -47,7 +47,7 @@ export const postEvent =
             return res.status(400).json(format("Missing {id} param"));
         }
 
-        // @todo check amount param validity
+        // @todo check amount param validity, be more restrictive
         const amount = req.params.amount || 0;
         const eventType = req.params.eventType === EventType.event ? EventType.event : EventType.expenseEvent;
 
