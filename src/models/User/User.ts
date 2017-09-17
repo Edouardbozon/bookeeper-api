@@ -42,8 +42,8 @@ export type UserModel = mongoose.Document & {
     },
 
     acceptOrReject: (joinReqId: string, sharedFlat: SharedFlatModel, status: JoinRequestStatus) => Promise<void>
-    addNotification: (message: string, type: NotificationType) => Promise<void>
-    comparePassword: (candidatePassword: string, cb: (err: any, isMatch: any) => {}) => void
+    notify: (message: string, type: NotificationType) => Promise<void>
+    comparePassword: (candidatePassword: string, cb: (err: Error, isMatch: boolean) => Function) => void
     gravatar: (size: number) => string
 };
 
@@ -99,18 +99,32 @@ userSchema.methods.acceptOrReject = async function(
     if (this.id !== sharedFlat.getAdmin().id) throw new Error("Only shared flat admin should manage join requests");
 
     const joinRequest = await JoinRequest.findById(joinReqId) as JoinRequestModel;
-    if (undefined == sharedFlat) throw new Error("Join request not found");
+    if (undefined == joinRequest) throw new Error("Join request not found");
+
+    const askingUser = await User.findById(joinRequest.userId) as UserModel;
 
     if (status === "accepted") {
-        await joinRequest.validateRequest();
+        await Promise.all([
+            joinRequest.validateRequest(),
+            sharedFlat.notify(
+                `${this.profile.name} ${status} ${askingUser.profile.name} as resident of ${sharedFlat.name}`,
+                "success"
+            ),
+        ]);
     } else if (status === "rejected") {
-        await joinRequest.rejectRequest();
+        await Promise.all([
+            joinRequest.rejectRequest(),
+            sharedFlat.notify(
+                `${this.profile.name} ${status} ${askingUser.profile.name} as resident of ${sharedFlat.name}`,
+                "alert"
+            ),
+        ]);
     } else {
         throw new Error(`Logical exception, request must be {accepted} or {rejected}, {${status}} given`);
     }
 };
 
-userSchema.methods.addNotification = function(this: UserModel, message: string, type: NotificationType): Promise<void> {
+userSchema.methods.notify = function(this: UserModel, message: string, type: NotificationType): Promise<void> {
     return new Promise((resolve, reject) => {
         const notification = new Notification(createNotification(message, type, this));
         notification.save((err: any, user: UserModel) => {

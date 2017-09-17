@@ -83,7 +83,7 @@ export const deleteSharedFlat =
         try {
             const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
             if (!sharedFlat.shouldBeAdministrateBy(req.user)) {
-                return res.status(403).json(format("Insufisant permission"));
+                return res.status(403).json(format("Insufficient permission"));
             }
 
             await SharedFlat.findByIdAndRemove(req.params.id);

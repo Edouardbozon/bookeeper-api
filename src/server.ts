@@ -34,6 +34,7 @@ import * as contactController from "./controllers/contact";
 import * as sharedFlatController from "./controllers/shared-flat";
 import * as joinRequestController from "./controllers/join-request";
 import * as eventController from "./controllers/event";
+import * as notificationController from "./controllers/notification";
 
 /**
  * API keys and Passport configuration.
@@ -107,21 +108,22 @@ app.use((req, res, next) => {
 // app.get("/login", userController.getLogin);
 app.post("/login", userController.postLogin);
 // app.get("/logout", userController.logout);
-app.get("/forgot", userController.getForgot);
-app.post("/forgot", userController.postForgot);
-app.get("/reset/:token", userController.getReset);
-app.post("/reset/:token", userController.postReset);
+// app.get("/forgot", userController.getForgot);
+// app.post("/forgot", userController.postForgot);
+// app.get("/reset/:token", userController.getReset);
+// app.post("/reset/:token", userController.postReset);
 app.post("/signup", userController.postSignup);
-app.post("/contact", contactController.postContact);
-app.post("/account/profile", passportConfig.isAuthenticated, userController.postUpdateProfile);
-app.post("/account/password", passportConfig.isAuthenticated, userController.postUpdatePassword);
-app.post("/account/delete", passportConfig.isAuthenticated, userController.postDeleteAccount);
-app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userController.getOauthUnlink);
+// app.post("/contact", contactController.postContact);
+// app.post("/account/profile", passportConfig.isAuthenticated, userController.postUpdateProfile);
+// app.post("/account/password", passportConfig.isAuthenticated, userController.postUpdatePassword);
+// app.post("/account/delete", passportConfig.isAuthenticated, userController.postDeleteAccount);
+// app.get("/account/unlink/:provider", passportConfig.isAuthenticated, userController.getOauthUnlink);
 
 /**
- * API examples routes.
+ * API routes
  */
-app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getFacebook);
+// app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getFacebook);
+app.get("/api/me/notifications", passportConfig.isAuthenticated, notificationController.getUserNotifications);
 
 /**
  * Shared Flats

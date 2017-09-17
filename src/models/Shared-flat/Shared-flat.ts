@@ -11,6 +11,19 @@ import {
     JoinRequestStatus
 } from "./Join-request";
 
+import {
+    default as Event,
+    EventModel,
+    createEvent,
+    EventType
+} from "./Event";
+
+import {
+    default as Notification,
+    NotificationModel,
+    NotificationType
+} from "../User/Notification";
+
 export type Address = {
     city: string
     street: string
@@ -41,12 +54,13 @@ export type SharedFlatModel = mongoose.Document & {
     creationDate: Date
     updatedAt: Date
 
-    rejectJoinReq: (admin: UserModel) => Promise<void>
     getAdmin: () => Resident
-    makeJoinRequest: (askingUser: UserModel) => Promise<void>
-    computeResidentsYearsRate: (residents: UserModel[]) => number
-    shouldBeAdministrateBy: (user: UserModel) => boolean
     isMember: (user: UserModel) => boolean
+    shouldBeAdministrateBy: (user: UserModel) => boolean
+    notify: (message: string, type: NotificationType, avoid?: string[]) => Promise<void>
+    makeJoinRequest: (askingUser: UserModel) => Promise<JoinRequestModel>
+    computeResidentsYearsRate: (residents: UserModel[]) => number
+    createEvent: (userId: string, eventType: EventType, amount: number) => Promise<EventModel>
 };
 
 export type SharedFlatDocument = mongoose.Document & {
@@ -78,14 +92,14 @@ export const sharedFlatSchema = new mongoose.Schema({
 /**
  * Parallel middleware
  */
-sharedFlatSchema.pre("save", async function save(this: SharedFlatModel, next: Function) {
+sharedFlatSchema.pre("save", async function(this: SharedFlatModel, next: Function) {
     if (!this.isModified()) return next();
 
-    // update updateAt whenever a changement in entity
+    // update updateAt whenever a change is trigger in entity
     this.updatedAt = new Date();
 
     // find shared flat residents to retrieve their age,
-    // calcule "residents years rate", update "full" props and "countResidents"
+    // calculate "residents years rate", update "full" props and "countResidents"
     const ids = this.residents.map((resident) => resident.id);
     User.find({ "id": { $in: ids }}, ((err: any, residents: UserModel[]) => {
 
@@ -100,7 +114,10 @@ sharedFlatSchema.pre("save", async function save(this: SharedFlatModel, next: Fu
  * Create new sharedFlat join request
  * Add new shared flat admin notification
  */
-sharedFlatSchema.methods.makeJoinRequest = async function makeJoinRequest(this: SharedFlatModel, askingUser: UserModel) {
+sharedFlatSchema.methods.makeJoinRequest = async function(
+    this: SharedFlatModel,
+    askingUser: UserModel
+): Promise<JoinRequestModel> {
     if (this.full) throw new Error("Shared flat is full");
 
     this.residents.forEach((resident: Resident) => {
@@ -110,43 +127,48 @@ sharedFlatSchema.methods.makeJoinRequest = async function makeJoinRequest(this: 
     const memberOf = await SharedFlat.findOne({ "residents.id": { $in: askingUser.id }});
     if (undefined != memberOf) throw new Error("You are already a member of a shared flat");
 
-    const joinRequest = new JoinRequest(createJoinRequest(askingUser, this));
+    const joinRequest = new JoinRequest(createJoinRequest(askingUser, this)) as JoinRequestModel;
 
     // catch multiple requests
     const copy = await JoinRequest.findOne({ userId: askingUser.id });
     if (undefined != copy) throw new Error("Request already posted");
 
-    await joinRequest.save();
-
     const admin = await User.findById(this.getAdmin().id) as UserModel;
-    await admin.addNotification(`${askingUser.profile.name} asked to join your shared flat`, "info");
+
+    await Promise.all([
+        joinRequest.save(),
+        this.notify(`${askingUser.profile.name} asked to join your shared flat`, "info"),
+        admin.notify(`As ${this.name} admin you have to validate or reject ${askingUser.profile.name} join request`, "info"),
+    ]);
+
+    return joinRequest;
 };
 
 /**
  * Get admin from residents
  */
-sharedFlatSchema.methods.getAdmin = function getAdmin(this: SharedFlatModel): Resident {
+sharedFlatSchema.methods.getAdmin = function(this: SharedFlatModel): Resident {
     return this.residents.filter((resident: Resident) => resident.role === "admin")[0];
 };
 
 /**
  * Check if given user is member of this shared flat
  */
-sharedFlatSchema.methods.isMember = function isMember(this: SharedFlatModel, user: UserModel): boolean {
+sharedFlatSchema.methods.isMember = function(this: SharedFlatModel, user: UserModel): boolean {
     return this.residents.filter((resident: Resident) => resident.id !== user.id).length === 1;
 };
 
 /**
  * Compute years rate of a shared flat
  */
-sharedFlatSchema.methods.computeResidentsYearsRate = function computeResidentsYearsRate(residents: UserModel[]): number {
+sharedFlatSchema.methods.computeResidentsYearsRate = function(residents: UserModel[]): number {
     return residents.reduce((acc, resident) => resident.age, 0) / residents.length;
 };
 
 /**
  * Check if shared flat should be administrate by the given user
  */
-sharedFlatSchema.methods.shouldBeAdministrateBy = function shouldBeAdministrateBy(this: SharedFlatModel, user: UserModel): boolean {
+sharedFlatSchema.methods.shouldBeAdministrateBy = function(this: SharedFlatModel, user: UserModel): boolean {
     let check = false;
     this.residents.forEach(resident => {
         if (resident.id === user.id && resident.role === "admin") {
@@ -157,5 +179,45 @@ sharedFlatSchema.methods.shouldBeAdministrateBy = function shouldBeAdministrateB
     return check;
 };
 
-const SharedFlat = mongoose.model("SharedFlat", sharedFlatSchema) as mongoose.Model<SharedFlatDocument>;
+/**
+ * Create an event in a shared flat
+ */
+sharedFlatSchema.methods.createEvent = async function(
+    this: SharedFlatModel,
+    userId: string,
+    eventType: EventType,
+    amount: number
+): Promise<EventModel> {
+    const user = await User.findById(userId) as UserModel;
+    if (!this.isMember(user)) throw new Error("Only shared flat resident can create an event");
+
+    const previousEvent = await Event.findOne({}, {}, { sort: { createdAt: -1 }}) as EventModel;
+    const event = new Event(createEvent(this, eventType, user, amount, previousEvent)) as EventModel;
+
+    await Promise.all([
+        this.notify(`New ${event.type} created by ${user.profile.name}`, "info"),
+        event.save(),
+    ]);
+
+    return event;
+};
+
+/**
+ * Notify all residents of a shared flat
+ */
+sharedFlatSchema.methods.notify = async function (
+    this: SharedFlatModel,
+    message: string,
+    type: NotificationType,
+    avoid: string[] = []
+): Promise<void> {
+    const userIds = this.residents.map(resident => resident.id);
+    const users = await User.find({ id: { $in: userIds } }) as UserModel[];
+    for (const user of users) {
+        if (avoid.indexOf(user.id) > -1) continue;
+        else await user.notify(message, type);
+    }
+};
+
+const SharedFlat = mongoose.model("SharedFlat", sharedFlatSchema);
 export default SharedFlat;
