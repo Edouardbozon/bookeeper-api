@@ -23,7 +23,7 @@ export const notificationSchema = new mongoose.Schema({
     message: String,
     type: String,
     userId: String,
-    createdAd: { type: Date, default: Date.now },
+    createdAt: { type: Date, default: Date.now },
     readed: { type: Boolean, default: false },
 });
 
