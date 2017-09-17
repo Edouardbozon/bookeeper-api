@@ -40,7 +40,7 @@ export const postJoinSharedFlatRequest =
         try {
             const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
             await sharedFlat.makeJoinRequest(req.user);
-            res.status(200).json(format("Request succesfully posted"));
+            res.status(200).json(format("Request successfully posted"));
         } catch (err) {
             res.status(500).json(format(err));
         }
@@ -61,7 +61,7 @@ export const postValidateJoinRequest =
         try {
             const user = (req.user as UserModel);
             await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "accepted");
-            res.status(200).json(format("Request succesfully validated"));
+            res.status(200).json(format("Request successfully validated"));
         } catch (err) {
             res.status(500).json(format(err));
         }
@@ -82,7 +82,7 @@ export const postRejectJoinRequest =
         try {
             const user = (req.user as UserModel);
             await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "rejected");
-            res.status(200).json(format("Request succesfully rejected"));
+            res.status(200).json(format("Request successfully rejected"));
         } catch (err) {
             res.status(500).json(format(err));
         }

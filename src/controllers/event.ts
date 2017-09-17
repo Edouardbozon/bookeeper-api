@@ -55,20 +55,9 @@ export const postEvent =
             const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
             if (undefined == sharedFlat) throw new Error(`Shared flat with id {${req.params.id}} not found`);
 
-            const user = await User.findById(req.user.id) as UserModel;
-            if (!sharedFlat.isMember(user)) throw new Error("Only shared flat resident should see events");
+            const event = await sharedFlat.createEvent(req.user.id, eventType, amount) as EventModel;
+            await sharedFlat.notifyAll(`${event.createdAt.toLocaleDateString()} New event created by ${req.user.email}`, "info");
 
-            const previousEvent = await Event.findOne({}, {}, { sort: { createdAt: -1 }}) as EventModel;
-            const event = new Event(createEvent(
-                sharedFlat,
-                eventType,
-                user,
-                amount,
-                previousEvent,
-            ));
-            console.log(event);
-
-            await event.save();
             res.status(201).json(format("Event created"));
         } catch (err) {
             res.status(500).json(format(err));
