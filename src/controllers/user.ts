@@ -30,7 +30,7 @@ export let postLogin = async (req: Request, res: Response, next: NextFunction) =
         }
         req.logIn(user, (err) => {
             if (err) { return next(err); }
-            res.status(200).end();
+            res.status(200).json(user);
         });
     })(req, res, next);
 };
@@ -56,7 +56,7 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
         email: req.body.email,
         password: req.body.password,
         age: req.body.age
-    });
+    }) as UserModel;
 
     User.findOne({ email: req.body.email }, (err: any, existingUser: UserModel) => {
         if (err) { return next(err); }
@@ -69,7 +69,7 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
                 if (err) {
                     return next(err);
                 }
-                res.status(201).send();
+                res.status(201).json(user);
             });
         });
     });

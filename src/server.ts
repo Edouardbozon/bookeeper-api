@@ -8,6 +8,7 @@ import * as bodyParser from "body-parser";
 import * as logger from "morgan";
 import * as errorHandler from "errorhandler";
 import * as lusca from "lusca";
+import * as cors from "cors";
 import * as dotenv from "dotenv";
 import * as mongo from "connect-mongo";
 import * as flash from "express-flash";
@@ -65,6 +66,7 @@ mongoose.connection.on("error", () => {
 app.set("port", process.env.PORT || 3000);
 app.use(compression());
 app.use(logger("dev"));
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(expressValidator());
