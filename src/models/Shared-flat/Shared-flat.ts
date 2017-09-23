@@ -158,11 +158,11 @@ sharedFlatSchema.methods.isMember = function(this: SharedFlatModel, user: UserMo
     return this.residents.filter((resident: Resident) => resident.id !== user.id).length === 1;
 };
 
-/**
+/**Z
  * Compute years rate of a shared flat
  */
 sharedFlatSchema.methods.computeResidentsYearsRate = function(residents: UserModel[]): number {
-    return residents.reduce((acc, resident) => resident.age, 0) / residents.length;
+    return residents.reduce((acc, resident) => resident.profile.age, 0) / residents.length;
 };
 
 /**

@@ -4,29 +4,25 @@
 
 Join or create a Shared flat with your roommates, track your common expenses. 
 
-## Pre-reqs
+## Pre-requisites
 - Install Docker 
 - Install Docker-compose
 
 ## Getting started
 - Clone the repository
 ```
-git clone git@github.com:Edouardbozon/bookkeeper-api.git
+$ git clone git@github.com:Edouardbozon/bookkeeper-api.git
 ```
 - Jump in dir
 ```
-cd <bookkeeper-api>
+$ cd <bookkeeper-api>
 ```
-- First time, build and run containers
+- First time build and run containers, next time build is unnecessary
 ```
-docker-compose up --build
+$ docker-compose up --build
 ```
-- :rainbow: It works! navigate to [http://localhost:3000](http://localhost:3000)
-
-- Next time, just run containers
-```
-docker-compose up
-```
+- :rainbow: It works! By default the api is running on `http://localhost:3000/`
+- You can easily interact with the api using [Postman](https://www.getpostman.com/)
 
 ## Road map
 
@@ -42,23 +38,26 @@ There is a lot of things to do:
         - Add delete join request action only available for the author
     - Improve notification system to help user in those actions
         - Add read action when user saw them
-        - Add links props in model to impove navigation
-        - list notifications by user
+        - Add links props in model to improve navigation
+        - :white_check_mark: list notifications by user
     - Add ability to modify a shared flat by an admin
         - add some user friendly fields like banner
         - Improve address with lat and long
         - Add geo validation for address
     - Add tests
-3. Make residents shared flat functionnalities
-    - Add list common expenses route
-        - show 
-    - Add ability to add common expense 
-        - Maybe use event sourcing solution to track expense history
+3. Make residents shared flat functionalities
+    - Add events system
+        - :white_check_mark: list action
+        - show action
+        - improve event types to reflect IRL shared flat events
+            - detailed actions
+        - add event type "need"
     - Add tests
 4. [Further] Add geo search for shared flats to join them more easily
     - Maybe use Elasticsearch to provide geo-search ?
-5. [Further] Add realtime shared flat expenses tracking
+5. [Further] Add real-time shared flat event tracking
     - Maybe use socket.io ?
+6. [Further] Add auto generated docs
 
 ## Helpfull links
 

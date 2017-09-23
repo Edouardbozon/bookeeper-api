@@ -5,6 +5,7 @@ import * as passport from "passport";
 import { default as User, UserModel, AuthToken } from "../models/User/User";
 import { Request, Response, NextFunction } from "express";
 import { LocalStrategyInfo } from "passport-local";
+import { asyncMiddleware } from "../common/common";
 import { WriteError } from "mongodb";
 const request = require("express-validator");
 
@@ -12,7 +13,7 @@ const request = require("express-validator");
  * POST /login
  * Sign in using email and password.
  */
-export let postLogin = async (req: Request, res: Response, next: NextFunction) => {
+export let postLogin = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Email is not valid").isEmail();
     req.assert("password", "Password cannot be blank").notEmpty();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
@@ -30,20 +31,21 @@ export let postLogin = async (req: Request, res: Response, next: NextFunction) =
         }
         req.logIn(user, (err) => {
             if (err) { return next(err); }
-            res.status(200).end();
+            res.status(200).json(user);
         });
     })(req, res, next);
-};
+});
 
 /**
  * POST /signup
  * Create a new local account.
  */
-export let postSignup = async (req: Request, res: Response, next: NextFunction) => {
+export let postSignup = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Email is not valid").isEmail();
     req.assert("password", "Password must be at least 4 characters long").len({ min: 4 });
     req.assert("confirmPassword", "Passwords do not match").equals(req.body.password);
     req.assert("age", "Age is incorrect").isInt();
+    req.assert("name", "Cannot be empty").notEmpty();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
 
     const errors = req.validationErrors();
@@ -55,8 +57,11 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
     const user = new User({
         email: req.body.email,
         password: req.body.password,
-        age: req.body.age
-    });
+        profile: {
+            name: req.body.name,
+            age: req.body.age
+        }
+    }) as UserModel;
 
     User.findOne({ email: req.body.email }, (err: any, existingUser: UserModel) => {
         if (err) { return next(err); }
@@ -69,17 +74,17 @@ export let postSignup = async (req: Request, res: Response, next: NextFunction) 
                 if (err) {
                     return next(err);
                 }
-                res.status(201).send();
+                res.status(201).json(user);
             });
         });
     });
-};
+});
 
 /**
  * POST /account/profile
  * Update profile information.
  */
-export let postUpdateProfile = async (req: Request, res: Response, next: NextFunction) => {
+export let postUpdateProfile = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Please enter a valid email address.").isEmail();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
 
@@ -106,13 +111,13 @@ export let postUpdateProfile = async (req: Request, res: Response, next: NextFun
             res.status(201);
         });
     });
-};
+});
 
 /**
  * POST /account/password
  * Update current password.
  */
-export let postUpdatePassword = async (req: Request, res: Response, next: NextFunction) => {
+export let postUpdatePassword = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     req.assert("password", "Password must be at least 4 characters long").len({ min: 4 });
     req.assert("confirmPassword", "Passwords do not match").equals(req.body.password);
 
@@ -132,26 +137,26 @@ export let postUpdatePassword = async (req: Request, res: Response, next: NextFu
             res.redirect("/account");
         });
     });
-};
+});
 
 /**
  * POST /account/delete
  * Delete user account.
  */
-export let postDeleteAccount = async (req: Request, res: Response, next: NextFunction) => {
+export let postDeleteAccount = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     User.remove({ _id: req.user.id }, (err: any) => {
         if (err) { return next(err); }
         req.logout();
         req.flash("info", { msg: "Your account has been deleted." });
         res.redirect("/");
     });
-};
+});
 
 /**
  * GET /account/unlink/:provider
  * Unlink OAuth provider.
  */
-export let getOauthUnlink = async (req: Request, res: Response, next: NextFunction) => {
+export let getOauthUnlink = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     const provider = req.params.provider;
     User.findById(req.user.id, (err: any, user: any) => {
         if (err) { return next(err); }
@@ -163,13 +168,13 @@ export let getOauthUnlink = async (req: Request, res: Response, next: NextFuncti
             res.redirect("/account");
         });
     });
-};
+});
 
 /**
  * GET /reset/:token
  * Reset Password page.
  */
-export let getReset = async (req: Request, res: Response, next: NextFunction) => {
+export let getReset = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated()) {
         return res.redirect("/");
     }
@@ -186,13 +191,13 @@ export let getReset = async (req: Request, res: Response, next: NextFunction) =>
                 title: "Password Reset"
             });
         });
-};
+});
 
 /**
  * POST /reset/:token
  * Process the reset password request.
  */
-export let postReset = async (req: Request, res: Response, next: NextFunction) => {
+export let postReset = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     req.assert("password", "Password must be at least 4 characters long.").len({ min: 4 });
     req.assert("confirm", "Passwords must match.").equals(req.body.password);
 
@@ -248,26 +253,26 @@ export let postReset = async (req: Request, res: Response, next: NextFunction) =
         if (err) { return next(err); }
         res.redirect("/");
     });
-};
+});
 
 /**
  * GET /forgot
  * Forgot Password page.
  */
-export let getForgot = async (req: Request, res: Response) => {
+export let getForgot = asyncMiddleware(async (req: Request, res: Response) => {
     if (req.isAuthenticated()) {
         return res.redirect("/");
     }
     res.render("account/forgot", {
         title: "Forgot Password"
     });
-};
+});
 
 /**
  * POST /forgot
  * Create a random token, then the send user an email with a reset link.
  */
-export let postForgot = async (req: Request, res: Response, next: NextFunction) => {
+export let postForgot = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Please enter a valid email address.").isEmail();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
 
@@ -325,4 +330,4 @@ export let postForgot = async (req: Request, res: Response, next: NextFunction) 
         if (err) { return next(err); }
         res.redirect("/forgot");
     });
-};
+});
