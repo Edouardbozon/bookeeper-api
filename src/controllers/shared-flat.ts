@@ -6,7 +6,7 @@ import { WriteError } from "mongodb";
 import { asyncMiddleware } from "../common/common";
 import { format } from "../common/factories";
 
-import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat/Shared-flat";
+import { default as SharedFlat, SharedFlatModel, Address } from "../models/Shared-flat/Shared-flat";
 import { default as User, UserModel } from "../models/User/User";
 
 /**
@@ -37,6 +37,8 @@ export const createSharedFlat =
         req.assert("postalCode", "Location is not valid").isInt();
         req.assert("city", "Location is not valid").notEmpty();
         req.assert("country", "Location is not valid").notEmpty();
+        req.assert("iconUrl", "iconUrl is not valid").notEmpty().isURL();
+        req.assert("bannerUrl", "bannerUrl is not valid").notEmpty().isURL();
 
         const errors = req.validationErrors();
         if (errors) return res.status(400).json(errors);
@@ -54,6 +56,9 @@ export const createSharedFlat =
                 residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
                 size: req.body.size,
                 pricePerMonth: req.body.pricePerMonth,
+
+                bannerUrl: req.body.bannerUrl,
+                iconUrl: req.body.iconUrl,
 
                 // @todo check location validity
                 location: {
@@ -88,6 +93,54 @@ export const deleteSharedFlat =
 
             await SharedFlat.findByIdAndRemove(req.params.id);
             res.status(204).json(format("Shared flat successfully deleted"));
+        } catch (err) {
+            res.status(500).json(format(err));
+        }
+    });
+
+/**
+ * PUT /shared-flat/{id}
+ */
+export const putSharedFlat =
+    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+        if (!req.params.id) {
+            return res.status(400).json(format("Missing {id} param"));
+        }
+
+        req.assert("name", "name is not valid").notEmpty();
+        req.assert("size", "size must be an integer").isInt();
+        req.assert("pricePerMonth", "pricePerMonth must be an integer").isInt();
+        req.assert("street", "street is not valid").notEmpty();
+        req.assert("postalCode", "postalCode is not valid").isInt();
+        req.assert("city", "city is not valid").notEmpty();
+        req.assert("country", "country is not valid").notEmpty();
+        req.assert("iconUrl", "iconUrl is not valid").notEmpty().isURL();
+        req.assert("bannerUrl", "bannerUrl is not valid").notEmpty().isURL();
+
+        const errors = req.validationErrors();
+        if (errors) return res.status(400).json(errors);
+
+        try {
+            const uniqName = await SharedFlat.findOne({ name: req.body.name });
+            if (undefined != uniqName) throw new Error("Name already exists");
+
+            const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
+            if (!sharedFlat.shouldBeAdministrateBy(req.user)) {
+                return res.status(403).json(format("Insufficient permission"));
+            }
+
+            const { body } = req;
+            for (const key in body) {
+                if (body.hasOwnProperty(key)) {
+                    const data: string | number = body[key];
+                    const location = ["city", "postalCode", "street", "country"];
+                    if (location.indexOf(key) > -1) sharedFlat.location[key] = data;
+                    sharedFlat[key] = data;
+                }
+            }
+
+            await sharedFlat.save();
+            res.status(200).json(format("Shared flat successfully modified"));
         } catch (err) {
             res.status(500).json(format(err));
         }

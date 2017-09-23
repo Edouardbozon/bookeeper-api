@@ -29,6 +29,7 @@ export type Address = {
     street: string
     postalCode: number
     country: string
+    [key: string]: string | number
 };
 export type Resident = {
     id: string
@@ -43,6 +44,8 @@ export type SharedFlatModel = mongoose.Document & {
     private: boolean
     size: number
     full: boolean
+
+    [key: string]: any
 
     residents: Resident[]
     countResidents: number
@@ -68,7 +71,7 @@ export type SharedFlatDocument = mongoose.Document & {
 };
 
 export const sharedFlatSchema = new mongoose.Schema({
-    name: { type: String, unique: true, default: Date.now },
+    name: { type: String, unique: true, default: "Sharedflat-" + Date.now },
     private: { type: Boolean, default: false },
     size: { type: Number, default: 3 },
     full: { type: Boolean, default: false },
@@ -84,6 +87,9 @@ export const sharedFlatSchema = new mongoose.Schema({
         postalCode: { type: Number, required: true },
         country: { type: String, required: true },
     },
+
+    iconUrl: String,
+    bannerUrl: String,
 
     creationDate: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
@@ -124,7 +130,7 @@ sharedFlatSchema.methods.makeJoinRequest = async function(
         if (resident.id === askingUser.id) throw new Error("You're already member of this shared flat");
     });
 
-    const memberOf = await SharedFlat.findOne({ "residents.id": { $in: askingUser.id }});
+    const memberOf = await SharedFlat.findOne({ "residents.id": askingUser.id });
     if (undefined != memberOf) throw new Error("You are already a member of a shared flat");
 
     const joinRequest = new JoinRequest(createJoinRequest(askingUser, this)) as JoinRequestModel;
