@@ -1,5 +1,6 @@
 import * as nodemailer from "nodemailer";
 import { Request, Response } from "express";
+import { asyncMiddleware } from "../common/common";
 
 const transporter = nodemailer.createTransport({
     service: "SendGrid",
@@ -13,7 +14,7 @@ const transporter = nodemailer.createTransport({
  * POST /contact
  * Send a contact form via Nodemailer.
  */
-export let postContact = async (req: Request, res: Response) => {
+export let postContact = asyncMiddleware(async (req: Request, res: Response) => {
     req.assert("name", "Name cannot be blank").notEmpty();
     req.assert("email", "Email is not valid").isEmail();
     req.assert("message", "Message cannot be blank").notEmpty();
@@ -37,4 +38,4 @@ export let postContact = async (req: Request, res: Response) => {
         }
         res.status(200).json({ message: "Email send" });
     });
-};
+});

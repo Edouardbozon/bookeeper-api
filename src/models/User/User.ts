@@ -24,16 +24,18 @@ import {
 } from "../Shared-flat/Shared-flat";
 
 export type UserModel = mongoose.Document & {
-    email: string,
-    password: string,
-    passwordResetToken: string,
-    passwordResetExpires: Date,
-    age: number
+    email: string
+    password: string
+    passwordResetToken: string
+    passwordResetExpires: Date
 
-    facebook: string,
-    tokens: AuthToken[],
+    facebook: string
+    tokens: AuthToken[]
+
+    hasSharedFlat: boolean
 
     profile: {
+        age: number
         name: string,
         gender: string,
         location: string,
@@ -57,15 +59,17 @@ const userSchema = new mongoose.Schema({
     password: String,
     passwordResetToken: String,
     passwordResetExpires: Date,
-    age: Number,
 
     facebook: String,
     twitter: String,
     google: String,
     tokens: Array,
 
+    hasSharedFlat: { type: Boolean, default: false },
+
     profile: {
         name: String,
+        age: Number,
         gender: String,
         location: String,
         website: String,
@@ -76,7 +80,16 @@ const userSchema = new mongoose.Schema({
 /**
  * Password hash middleware.
  */
-userSchema.pre("save", function save(this: UserModel, next) {
+userSchema.pre("save", function save(this: UserModel, next: Function) {
+    SharedFlat.findOne({ "residents.id": this.id }, (err, sharedFlat: SharedFlatModel) => {
+        if (err) return next(err);
+        if (undefined == sharedFlat) {
+            this.hasSharedFlat = false;
+        } else {
+            this.hasSharedFlat = true;
+        }
+    });
+
     if (!this.isModified("password")) return next();
     bcrypt.genSalt(10, (err, salt) => {
         if (err) return next(err);
