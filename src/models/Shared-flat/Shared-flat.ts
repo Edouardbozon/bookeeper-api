@@ -211,7 +211,7 @@ sharedFlatSchema.methods.createEvent = async function(
 /**
  * Notify all residents of a shared flat
  */
-sharedFlatSchema.methods.notify = async function (
+sharedFlatSchema.methods.notify = async function(
     this: SharedFlatModel,
     message: string,
     type: NotificationType,
@@ -219,9 +219,13 @@ sharedFlatSchema.methods.notify = async function (
 ): Promise<void> {
     const userIds = this.residents.map(resident => resident.id);
     const users = await User.find({ id: { $in: userIds } }) as UserModel[];
+
     for (const user of users) {
-        if (avoid.indexOf(user.id) > -1) continue;
-        else await user.notify(message, type);
+        if (avoid.indexOf(user.id) > -1) {
+            continue;
+        }
+
+        await user.notify(message, type);
     }
 };
 

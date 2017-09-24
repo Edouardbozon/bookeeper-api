@@ -1,9 +1,11 @@
 import * as bcrypt from "bcrypt-nodejs";
 import * as crypto from "crypto";
 import * as mongoose from "mongoose";
+import * as R from "ramda";
 
 import {
     default as Notification,
+    NotificationModel,
     INotification,
     NotificationType,
     createNotification
@@ -43,6 +45,7 @@ export type UserModel = mongoose.Document & {
         picture: string
     },
 
+    getNotifications: (filters?: Object) => Promise<INotification[]>
     acceptOrReject: (joinReqId: string, sharedFlat: SharedFlatModel, status: JoinRequestStatus) => Promise<void>
     notify: (message: string, type: NotificationType) => Promise<void>
     comparePassword: (candidatePassword: string, cb: (err: Error, isMatch: boolean) => Function) => void
@@ -153,6 +156,23 @@ userSchema.methods.comparePassword = function(
 ) {
     bcrypt.compare(candidatePassword, this.password, (err: mongoose.Error, isMatch: boolean) => {
         cb(err, isMatch);
+    });
+};
+
+/**
+ * Get user notifications ordered by date
+ */
+userSchema.methods.getNotifications = function(this: UserModel, filters = {}): Promise<NotificationModel[]> {
+    return new Promise((resolve, reject) => {
+        Notification.find(
+            R.merge({ userId: this.id }, filters),
+            {},
+            { sort: { createdAt: -1 } },
+            (err: any, notifications: NotificationModel[]) => {
+                if (err) reject(err);
+                resolve(notifications);
+            }
+        );
     });
 };
 
