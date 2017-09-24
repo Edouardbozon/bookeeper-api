@@ -37,7 +37,7 @@ There is a lot of things to do:
         - :white_check_mark: Add ability to validate or refused a shared flat request for an admin
         - Add delete join request action only available for the author
     - Improve notification system to help user in those actions
-        - Add read action when user saw them
+        - :white_check_mark: Add read action when user saw them
         - Add links props in model to improve navigation
         - :white_check_mark: list notifications by user
     - Add ability to modify a shared flat by an admin

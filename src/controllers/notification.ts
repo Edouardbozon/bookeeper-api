@@ -20,12 +20,27 @@ export const getUserNotifications =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
         try {
             const user = await User.findById(req.user.id) as UserModel;
-            const notifications = await Notification.find(
-                { userId: user.id },
-                {},
-                { sort: { createdAt: -1 }}
-            ) as NotificationModel[];
+            const notifications = await user.getNotifications();
             res.status(200).json(notifications);
+        } catch (err) {
+            res.status(500).json(format(err));
+        }
+    });
+
+/**
+ * POST /me/notifications/read
+ */
+export const postReadNotifications =
+    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const user = await User.findById(req.user.id) as UserModel;
+            const unreadNotifications = await user.getNotifications({ readed: false }) as NotificationModel[];
+
+            for (const notification of unreadNotifications) {
+                await notification.read();
+            }
+
+            res.sendStatus(200);
         } catch (err) {
             res.status(500).json(format(err));
         }
