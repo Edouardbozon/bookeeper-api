@@ -1,6 +1,7 @@
 import * as R from "ramda";
 import { Document } from "mongoose";
 import { UserModel } from "../models/User/User";
+import { SharedFlatModel } from "../models/Shared-flat/Shared-flat";
 import {
     default as Event,
     EventModel,
@@ -10,11 +11,11 @@ import {
     INeedEvent
 } from "../models/Shared-flat/Event";
 
-import {
-    // default as SharedFlat,
-    SharedFlatModel
-} from "../models/Shared-flat/Shared-flat";
 
+/**
+ * Event factory
+ * Take care of creating events, linking them by a chain
+ */
 export default abstract class EventFactory {
     static async create(
         sharedFlat: SharedFlatModel,
@@ -29,11 +30,12 @@ export default abstract class EventFactory {
         let number: number;
         let previousExpenseId: string;
 
+        // first shared flat event
         if (!previousEvent) {
             number = 0;
             previousExpenseId = undefined;
         } else {
-            number++;
+            number = R.add(R.prop("number", previousEvent), 1);
             previousExpenseId = previousEvent.id;
             previousEvent.last = false;
         }
@@ -48,6 +50,9 @@ export default abstract class EventFactory {
             previousExpenseId,
         };
 
+        /**
+         * build type specifics props
+         */
         switch (type) {
             case EventType.expenseEvent:
                 if (!R.has("amount", specificProps)) {
@@ -82,15 +87,15 @@ export default abstract class EventFactory {
                 break;
         }
 
-        const buildEvent = new Event(event);
-        const notification = `New ${event.type} created by ${createdBy.profile.name}`;
+        const buildedEvent = new Event(event) as EventModel;
+        const notification = `New ${buildedEvent.type} created by ${createdBy.profile.name}`;
 
         await Promise.all([
             previousEvent.save(),
-            buildEvent.save(),
+            buildedEvent.save(),
             sharedFlat.notify(notification, "info"),
         ]);
 
-        return buildEvent;
+        return buildedEvent;
     }
 }
