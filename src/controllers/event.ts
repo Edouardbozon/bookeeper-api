@@ -47,19 +47,27 @@ export const postEvent =
             return res.status(400).json(format("Missing {id} param"));
         }
 
-        const amount = req.params.amount || 0;
+        const typeSpecificProps: any = {};
         const eventType = req.params.eventType || EventType.event;
-        // if event type === event
-        // assert amount
 
-        // if event type === need
-        // assert message
+        switch (eventType) {
+            case EventType.expenseEvent:
+                typeSpecificProps.amount = req.params.amount || 0;
+                break;
+            case EventType.expenseEvent:
+                typeSpecificProps.message = req.params.message || undefined;
+                typeSpecificProps.requestedResident = req.params.requestedResident || undefined;
+                break;
+
+            default:
+                break;
+        }
 
         try {
             const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
             if (undefined == sharedFlat) throw new Error(`Shared flat with id {${req.params.id}} not found`);
 
-            const event = await sharedFlat.createEvent(req.user.id, eventType, { amount }) as EventModel;
+            const event = await sharedFlat.createEvent(req.user.id, eventType, typeSpecificProps) as EventModel;
             res.status(201).json(format("Event created"));
         } catch (err) {
             res.status(500).json(format(err));
