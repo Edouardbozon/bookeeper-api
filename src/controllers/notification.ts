@@ -7,7 +7,7 @@ import { LocalStrategyInfo } from "passport-local";
 import { asyncMiddleware } from "../common/common";
 import { format } from "../common/factories";
 
-import { default as Event, EventModel, EventType, createEvent } from "../models/Shared-flat/Event";
+import { default as Event, EventModel, EventType } from "../models/Shared-flat/Event";
 import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat/Shared-flat";
 import { default as JoinRequest, JoinRequestModel } from "../models/Shared-flat/Join-request";
 import { default as User, UserModel } from "../models/User/User";

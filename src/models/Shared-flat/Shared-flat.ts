@@ -14,9 +14,10 @@ import {
 import {
     default as Event,
     EventModel,
-    createEvent,
     EventType
 } from "./Event";
+
+import EventFactory from "../../services/event.factory";
 
 import {
     default as Notification,
@@ -57,13 +58,14 @@ export type SharedFlatModel = mongoose.Document & {
     creationDate: Date
     updatedAt: Date
 
+    getLastEvents: (userId: string, filters?: Object) => Promise<EventModel[]>
     getAdmin: () => Resident
     isMember: (user: UserModel) => boolean
     shouldBeAdministrateBy: (user: UserModel) => boolean
-    notify: (message: string, type: NotificationType, avoid?: string[]) => Promise<void>
+    notify: (message: string, type: NotificationType, exclusions?: string[]) => Promise<void>
     makeJoinRequest: (askingUser: UserModel) => Promise<JoinRequestModel>
     computeResidentsYearsRate: (residents: UserModel[]) => number
-    createEvent: (userId: string, eventType: EventType, amount: number) => Promise<EventModel>
+    createEvent: (userId: string, eventType: EventType, specificProps?: any) => Promise<EventModel>
 };
 
 export type SharedFlatDocument = mongoose.Document & {
@@ -164,7 +166,7 @@ sharedFlatSchema.methods.isMember = function(this: SharedFlatModel, user: UserMo
     return this.residents.filter((resident: Resident) => resident.id !== user.id).length === 1;
 };
 
-/**Z
+/**
  * Compute years rate of a shared flat
  */
 sharedFlatSchema.methods.computeResidentsYearsRate = function(residents: UserModel[]): number {
@@ -192,20 +194,26 @@ sharedFlatSchema.methods.createEvent = async function(
     this: SharedFlatModel,
     userId: string,
     eventType: EventType,
-    amount: number
+    specificProps: any = {}
 ): Promise<EventModel> {
     const user = await User.findById(userId) as UserModel;
     if (!this.isMember(user)) throw new Error("Only shared flat resident can create an event");
 
-    const previousEvent = await Event.findOne({}, {}, { sort: { createdAt: -1 }}) as EventModel;
-    const event = new Event(createEvent(this, eventType, user, amount, previousEvent)) as EventModel;
+    return await EventFactory.create(this, eventType, user, specificProps) as EventModel;
+};
 
-    await Promise.all([
-        this.notify(`New ${event.type} created by ${user.profile.name}`, "info"),
-        event.save(),
-    ]);
+/**
+ * Get last events
+ */
+sharedFlatSchema.methods.getLastEvents = async function(
+    this: SharedFlatModel,
+    userId: string,
+    filters = {}
+): Promise<EventModel[]> {
+    const user = await User.findById(userId) as UserModel;
+    if (!this.isMember(user)) throw new Error("Only shared flat resident can see events");
 
-    return event;
+    return await Event.find(filters, {}, { sort: { number: -1 }}) as EventModel[];
 };
 
 /**
@@ -215,13 +223,13 @@ sharedFlatSchema.methods.notify = async function(
     this: SharedFlatModel,
     message: string,
     type: NotificationType,
-    avoid: string[] = []
+    exclusions: string[] = []
 ): Promise<void> {
     const userIds = this.residents.map(resident => resident.id);
-    const users = await User.find({ id: { $in: userIds } }) as UserModel[];
+    const users = await User.find({ id: { $in: userIds }}) as UserModel[];
 
     for (const user of users) {
-        if (avoid.indexOf(user.id) > -1) {
+        if (exclusions.indexOf(user.id) > -1) {
             continue;
         }
 
