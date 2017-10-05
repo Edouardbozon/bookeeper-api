@@ -16,6 +16,7 @@ import { SharedFlatModel } from "./Shared-flat";
 export enum EventType {
     event = "event",
     expenseEvent = "expense-event",
+    needEvent= "need-event",
 }
 
 export interface IEvent {
@@ -26,46 +27,23 @@ export interface IEvent {
     createdBy: string;
     last: boolean;
     type: EventType;
+}
+
+export interface IExpenseEvent extends IEvent {
     totalAmountAtThisTime: number;
     amount: number;
 }
 
-export const createEvent = (
-    sharedFlat: SharedFlatModel,
-    type: EventType,
-    createdBy: UserModel,
-    amount: number,
-    previousEvent?: EventModel,
-): IEvent => {
+export type NeedEventStatus = "fulfilled" | "rejected" | "pending" | "expired";
 
-    let number,
-        previousExpenseId,
-        totalAmountAtThisTime;
+export interface INeedEvent extends IEvent {
+    status: NeedEventStatus;
+    message: string;
+    requestedResident?: string;
+    expireAt: Date;
+}
 
-    if (undefined != previousEvent) {
-        number = previousEvent.number += 1;
-        previousExpenseId = previousEvent.id;
-        totalAmountAtThisTime = previousEvent.totalAmountAtThisTime += amount;
-    } else {
-        number = 0;
-        previousExpenseId = "";
-        totalAmountAtThisTime = 0;
-    }
-
-    return <IEvent>{
-        amount,
-        number,
-        type,
-        last: true,
-        sharedFlatId: sharedFlat.id,
-        previousExpenseId,
-        createdAt: new Date(),
-        totalAmountAtThisTime,
-        createdBy: createdBy.id
-    };
-};
-
-export type EventModel = mongoose.Document & IEvent;
+export interface EventModel extends mongoose.Document, IEvent, IExpenseEvent, INeedEvent {}
 
 const eventSchema = new mongoose.Schema({
     number: Number,
@@ -77,18 +55,6 @@ const eventSchema = new mongoose.Schema({
     type: String,
     amount: Number,
     totalAmountAtThisTime: Number
-});
-
-/**
- * Middleware
- */
-eventSchema.pre("save", async function save(this: EventModel, next: Function) {
-    const prevEvent = await Event.findOne({ number: this.number - 1 }) as EventModel;
-    if (undefined != prevEvent) {
-        prevEvent.last = false;
-        await prevEvent.save();
-    }
-    next();
 });
 
 const Event = mongoose.model("Event", eventSchema);

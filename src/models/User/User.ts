@@ -167,7 +167,7 @@ userSchema.methods.getNotifications = function(this: UserModel, filters = {}): P
         Notification.find(
             R.merge({ userId: this.id }, filters),
             {},
-            { sort: { createdAt: -1 } },
+            { sort: { createdAt: -1 }},
             (err: any, notifications: NotificationModel[]) => {
                 if (err) reject(err);
                 resolve(notifications);
@@ -180,13 +180,11 @@ userSchema.methods.getNotifications = function(this: UserModel, filters = {}): P
 /**
  * Helper method for getting user's gravatar.
  */
-userSchema.methods.gravatar = function(size: number) {
-    if (!size) {
-        size = 200;
-    }
+userSchema.methods.gravatar = function(size = 200) {
     if (!this.email) {
         return `https://gravatar.com/avatar/?s=${size}&d=retro`;
     }
+
     const md5 = crypto.createHash("md5").update(this.email).digest("hex");
     return `https://gravatar.com/avatar/${md5}?s=${size}&d=retro`;
 };

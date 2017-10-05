@@ -126,6 +126,7 @@ app.post("/signup", userController.postSignup);
  */
 // app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getFacebook);
 app.get("/api/me/notifications", passportConfig.isAuthenticated, notificationController.getUserNotifications);
+app.post("/api/me/notifications/read", passportConfig.isAuthenticated, notificationController.postReadNotifications);
 
 /**
  * Shared Flats
