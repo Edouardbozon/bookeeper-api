@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@types/cors": "^2.8.1",
+    "@types/passport-http": "^0.3.2",
     "@types/ramda": "^0.24.11",
     "async": "^2.1.2",
     "bcrypt-nodejs": "^0.0.3",
@@ -60,6 +61,7 @@
     "nodemailer": "^2.6.4",
     "passport": "0.3.2",
     "passport-facebook": "^2.1.1",
+    "passport-http": "^0.3.0",
     "passport-local": "^1.0.0",
     "ramda": "^0.24.1",
     "request": "^2.78.0"
