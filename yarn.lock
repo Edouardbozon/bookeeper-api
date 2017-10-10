@@ -150,6 +150,13 @@
     "@types/express" "*"
     "@types/passport" "*"
 
+"@types/passport-http@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@types/passport-http/-/passport-http-0.3.2.tgz#a4a8616512ff3ec41d2a4857c3664d0a735ff186"
+  dependencies:
+    "@types/express" "*"
+    "@types/passport" "*"
+
 "@types/passport@*", "@types/passport@^0.3.3":
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/@types/passport/-/passport-0.3.3.tgz#463455c4245ed232d6ce43615580c1001ade8234"
@@ -2867,6 +2874,12 @@ passport-facebook@^2.1.1:
   resolved "https://registry.yarnpkg.com/passport-facebook/-/passport-facebook-2.1.1.tgz#c39d0b52ae4d59163245a4e21a7b9b6321303311"
   dependencies:
     passport-oauth2 "1.x.x"
+
+passport-http@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/passport-http/-/passport-http-0.3.0.tgz#8ee53d4380be9c60df2151925029826f77115603"
+  dependencies:
+    passport-strategy "1.x.x"
 
 passport-local@^1.0.0:
   version "1.0.0"

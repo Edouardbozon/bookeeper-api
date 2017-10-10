@@ -66,7 +66,13 @@ mongoose.connection.on("error", () => {
 app.set("port", process.env.PORT || 3000);
 app.use(compression());
 app.use(logger("dev"));
-app.use(cors());
+app.use(cors({
+    origin: process.env.MOBILE_LIGHT_CLIENT_BASE_URL,
+    methods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+    credentials: true,
+    maxAge: 60 * 60 * 24 * 365,
+    preflightContinue: true,
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(expressValidator());
@@ -86,21 +92,6 @@ app.use(lusca.xframe("SAMEORIGIN"));
 app.use(lusca.xssProtection(true));
 app.use((req, res, next) => {
     res.locals.user = req.user;
-    next();
-});
-
-app.use((req, res, next) => {
-    // After successful login, redirect back to the intended page
-    if (!req.user &&
-        req.path !== "/login" &&
-        req.path !== "/signup" &&
-        !req.path.match(/^\/auth/) &&
-        !req.path.match(/\./)) {
-        req.session.returnTo = req.path;
-    } else if (req.user &&
-        req.path == "/account") {
-        req.session.returnTo = req.path;
-    }
     next();
 });
 

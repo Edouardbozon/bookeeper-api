@@ -1,6 +1,7 @@
 import * as passport from "passport";
 import * as request from "request";
 import * as passportLocal from "passport-local";
+import * as passportHttp from "passport-http";
 import * as passportFacebook from "passport-facebook";
 import * as _ from "lodash";
 
@@ -8,6 +9,7 @@ import { default as User, UserModel } from "../models/User/User";
 import { Request, Response, NextFunction } from "express";
 
 const LocalStrategy = passportLocal.Strategy;
+const BasicStrategy = passportHttp.BasicStrategy;
 const FacebookStrategy = passportFacebook.Strategy;
 
 passport.serializeUser((user: UserModel, done) => {
@@ -22,24 +24,40 @@ passport.deserializeUser((id, done) => {
 
 
 /**
- * Sign in using Email and Password.
+ * Local Auth
  */
-passport.use(new LocalStrategy({ usernameField: "email" }, (email, password, done: Function) => {
+passport.use(new LocalStrategy({ usernameField: "email" }, (email: string, password: string, done: Function) => {
     User.findOne({ email: email.toLowerCase() }, (err, user: UserModel) => {
-        if (err) { return done(err); }
-        if (!user) {
-            return done(undefined, false, { message: `Email ${email} not found.` });
-        }
+        if (err) return done(err);
+        if (!user) return done(undefined, false, { message: `Email ${email} not found.` });
+
         user.comparePassword(password, (err: Error, isMatch: boolean) => {
-            if (err) { return done(err); }
-            if (isMatch) {
-                return done(undefined, user);
-            }
+            if (err) return done(err);
+            if (isMatch) return done(undefined, user);
+
             return done(undefined, false, { message: "Invalid email or password." });
         });
     });
 }));
 
+/**
+ * Basic Auth
+ */
+passport.use(new BasicStrategy(
+    (username: string, password: string, done: Function) => {
+        User.findOne({ "profile.name": username }, (err, user: UserModel) => {
+            if (err) return done(err);
+            if (!user) return done(undefined, false);
+
+            user.comparePassword(password, (err: Error, isMatch: boolean) => {
+                if (err) return done(err);
+                if (isMatch) return done(undefined, user);
+
+                return done(undefined, false, { message: "Invalid email or password." });
+            });
+        });
+    }
+));
 
 /**
  * OAuth Strategy Overview
