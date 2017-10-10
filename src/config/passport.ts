@@ -44,8 +44,8 @@ passport.use(new LocalStrategy({ usernameField: "email" }, (email: string, passw
  * Basic Auth
  */
 passport.use(new BasicStrategy(
-    function (email: string, password: string, done: Function) {
-        User.findOne({ email: email.toLowerCase() }, (err, user: UserModel) => {
+    (username: string, password: string, done: Function) => {
+        User.findOne({ "profile.name": username }, (err, user: UserModel) => {
             if (err) return done(err);
             if (!user) return done(undefined, false);
 
