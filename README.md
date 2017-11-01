@@ -1,6 +1,6 @@
-# Bookkeeper Api
+# Bookeeper Api
 
-![Bookkeeper Api](https://media.giphy.com/media/l0IyeL8r9UhJI5LcA/giphy.gif)
+![Bookeeper Api](https://media.giphy.com/media/l0IyeL8r9UhJI5LcA/giphy.gif)
 
 Join or create a Shared flat with your roommates, track your common expenses. 
 
@@ -11,11 +11,11 @@ Join or create a Shared flat with your roommates, track your common expenses.
 ## Getting started
 - Clone the repository
 ```
-$ git clone git@github.com:Edouardbozon/bookkeeper-api.git
+$ git clone git@github.com:Edouardbozon/bookeeper-api.git
 ```
 - Jump in dir
 ```
-$ cd <bookkeeper-api>
+$ cd <bookeeper-api>
 ```
 - First time build and run containers, next time build is unnecessary
 ```

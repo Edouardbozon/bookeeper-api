@@ -1,10 +1,10 @@
 {
-  "name": "bookkeeper-api",
+  "name": "bookeeper-api",
   "version": "0.1.0",
   "description": "Join or create a Shared flat with your roommates, track your common expenses",
   "repository": {
     "type": "git",
-    "url": "https://github.com/edouardbozon/bookkeeper-api"
+    "url": "https://github.com/edouardbozon/bookeeper-api"
   },
   "author": "Edouard Bozon",
   "license": "MIT",
