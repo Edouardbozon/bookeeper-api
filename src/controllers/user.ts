@@ -24,10 +24,10 @@ export let postLogin = asyncMiddleware(async (req: Request, res: Response, next:
         return res.status(400).json(errors);
     }
 
-    passport.authenticate("local", (err: Error, user: UserModel, info: LocalStrategyInfo) => {
-        if (err) { return next(err); }
+    passport.authenticate("local", (err: Error, user: UserModel) => {
+        if (err) return next(err);
         if (!user) {
-            res.status(404).json("User not found");
+            return res.status(404).json("User not found");
         }
         req.logIn(user, (err) => {
             if (err) { return next(err); }
