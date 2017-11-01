@@ -7,8 +7,6 @@ import {
     EventModel,
     EventType,
     IEvent,
-    IExpenseEvent,
-    INeedEvent
 } from "../models/Shared-flat/Event";
 
 
@@ -87,15 +85,15 @@ export default abstract class EventFactory {
                 break;
         }
 
-        const buildedEvent = new Event(event) as EventModel;
-        const notification = `New ${buildedEvent.type} created by ${createdBy.profile.name}`;
+        const builtEvent = new Event(event) as EventModel;
+        const notification = `New ${builtEvent.type} created by ${createdBy.profile.name}`;
 
         await Promise.all([
             previousEvent.save(),
-            buildedEvent.save(),
+            builtEvent.save(),
             sharedFlat.notify(notification, "info"),
         ]);
 
-        return buildedEvent;
+        return builtEvent;
     }
 }

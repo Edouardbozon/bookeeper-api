@@ -1,5 +1,4 @@
 import * as passport from "passport";
-import * as request from "request";
 import * as passportLocal from "passport-local";
 import * as passportHttp from "passport-http";
 import * as passportFacebook from "passport-facebook";

@@ -1,14 +1,9 @@
 import * as mongoose from "mongoose";
 import { default as User, UserModel } from "../User/User";
 import { default as JoinRequest } from "./Join-request";
-import { asyncMiddleware } from "../../common/common";
-import { createNotification } from "../User/Notification";
 import {
     createJoinRequest,
     JoinRequestModel,
-    IJoinRequest,
-    joinRequestSchema,
-    JoinRequestStatus
 } from "./Join-request";
 
 import {
@@ -20,8 +15,6 @@ import {
 import EventFactory from "../../services/event.factory";
 
 import {
-    default as Notification,
-    NotificationModel,
     NotificationType
 } from "../User/Notification";
 
@@ -126,7 +119,9 @@ sharedFlatSchema.methods.makeJoinRequest = async function(
     this: SharedFlatModel,
     askingUser: UserModel
 ): Promise<JoinRequestModel> {
-    if (this.full) throw new Error("Shared flat is full");
+    if (this.full) {
+        throw new Error("Shared flat is full");
+    }
 
     this.residents.forEach((resident: Resident) => {
         if (resident.id === askingUser.id) throw new Error("You're already member of this shared flat");

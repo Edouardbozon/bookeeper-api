@@ -8,7 +8,7 @@ import { format } from "../common/factories";
 
 import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat/Shared-flat";
 import { default as JoinRequest, JoinRequestModel } from "../models/Shared-flat/Join-request";
-import { default as User, UserModel } from "../models/User/User";
+import { UserModel } from "../models/User/User";
 
 /**
  * GET /shared-flat/{id}/join-request
@@ -19,13 +19,9 @@ export const getJoinSharedFlatRequest =
             return res.status(400).json(format("Missing {id} param"));
         }
 
-        try {
-            const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
-            const joinRequests = await JoinRequest.find({ sharedFlatId: sharedFlat.id }) as JoinRequestModel[];
-            res.status(200).json(joinRequests);
-        } catch (err) {
-            res.status(500).json(format(err));
-        }
+        const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
+        const joinRequests = await JoinRequest.find({ sharedFlatId: sharedFlat.id }) as JoinRequestModel[];
+        res.status(200).json(joinRequests);
     });
 
 /**
@@ -37,13 +33,9 @@ export const postJoinSharedFlatRequest =
             return res.status(400).json(format("Missing {id} param"));
         }
 
-        try {
-            const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
-            await sharedFlat.makeJoinRequest(req.user);
-            res.status(200).json(format("Request successfully posted"));
-        } catch (err) {
-            res.status(500).json(format(err));
-        }
+        const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
+        await sharedFlat.makeJoinRequest(req.user);
+        res.status(200).json(format("Request successfully posted"));
     });
 
 /**
@@ -58,13 +50,9 @@ export const postValidateJoinRequest =
             return res.status(400).json(format("Missing {joinRequestId} param"));
         }
 
-        try {
-            const user = (req.user as UserModel);
-            await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "accepted");
-            res.status(200).json(format("Request successfully validated"));
-        } catch (err) {
-            res.status(500).json(format(err));
-        }
+        const user = (req.user as UserModel);
+        await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "accepted");
+        res.status(200).json(format("Request successfully validated"));
     });
 
 /**
@@ -79,11 +67,7 @@ export const postRejectJoinRequest =
             return res.status(400).json(format("Missing {joinRequestId} param"));
         }
 
-        try {
-            const user = (req.user as UserModel);
-            await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "rejected");
-            res.status(200).json(format("Request successfully rejected"));
-        } catch (err) {
-            res.status(500).json(format(err));
-        }
+        const user = (req.user as UserModel);
+        await user.acceptOrReject(req.params.joinRequestId, req.params.sharedFlatId, "rejected");
+        res.status(200).json(format("Request successfully rejected"));
     });

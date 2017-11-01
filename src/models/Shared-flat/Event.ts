@@ -1,17 +1,4 @@
 import * as mongoose from "mongoose";
-import { default as User, UserModel } from "../User/User";
-import { default as JoinRequest } from "./Join-request";
-import { asyncMiddleware } from "../../common/common";
-import { createNotification } from "../User/Notification";
-import {
-    createJoinRequest,
-    JoinRequestModel,
-    IJoinRequest,
-    joinRequestSchema,
-    JoinRequestStatus
-} from "./Join-request";
-
-import { SharedFlatModel } from "./Shared-flat";
 
 export enum EventType {
     event = "event",
