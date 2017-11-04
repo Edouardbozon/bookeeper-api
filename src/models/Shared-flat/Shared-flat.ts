@@ -93,7 +93,7 @@ export const sharedFlatSchema = new mongoose.Schema({
 /**
  * Parallel middleware
  */
-sharedFlatSchema.pre("save", async function(this: SharedFlatModel, next: Function) {
+sharedFlatSchema.pre("save", function(this: SharedFlatModel, next: Function) {
     if (!this.isModified()) return next();
 
     // update updateAt whenever a change is trigger in entity

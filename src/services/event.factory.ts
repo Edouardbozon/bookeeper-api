@@ -14,7 +14,7 @@ import {
  * Event factory
  * Take care of creating events, linking them by a chain
  */
-export default abstract class EventFactory {
+export default class EventFactory {
     static async create(
         sharedFlat: SharedFlatModel,
         type: EventType,
