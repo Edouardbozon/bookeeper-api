@@ -16,6 +16,7 @@ export const getSharedFlat =
         if (sharedFlats.length === 0) {
             return res.status(404).json(format("No Shared flat found"));
         }
+
         res.status(200).json(sharedFlats);
     });
 
@@ -37,19 +38,19 @@ export const createSharedFlat =
             return res.status(400).json(errors);
         }
 
-        const uniqName = await SharedFlat.findOne({ name: req.body.name });
-        if (undefined != uniqName) {
+        const uniqueName = await SharedFlat.findOne({ name: req.body.name });
+        if (undefined != uniqueName) {
             throw new Error("Name already exists");
+        }
+
+        // find if user is already a member of a shared flat
+        const memberOf = await SharedFlat.findOne({ "residents.id": req.user.id });
+        if (undefined != memberOf) {
+            throw new Error("You are already a member of a shared flat.");
         }
 
         const user = req.user as UserModel;
         user.hasSharedFlat = true;
-
-        // find if user is already a member of a shared flat
-        const memberOf = await SharedFlat.findOne({ "residents.id": user.id });
-        if (undefined != memberOf) {
-            throw new Error("You are already a member of a shared flat.");
-        }
 
         const sharedFlat = new SharedFlat({
             name: req.body.name,
@@ -112,8 +113,8 @@ export const putSharedFlat =
         const errors = req.validationErrors();
         if (errors) return res.status(400).json(errors);
 
-        const uniqName = await SharedFlat.findOne({ name: req.body.name });
-        if (undefined != uniqName) {
+        const uniqueName = await SharedFlat.findOne({ name: req.body.name });
+        if (undefined != uniqueName) {
             throw new Error("Name already exists");
         }
 

@@ -8,10 +8,10 @@ import { format } from "../common/factories";
 
 import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat/Shared-flat";
 import { default as JoinRequest, JoinRequestModel } from "../models/Shared-flat/Join-request";
-import { UserModel } from "../models/User/User";
+import { default as User, UserModel } from "../models/User/User";
 
 /**
- * GET /shared-flat/{id}/join-request
+ * GET /shared-flat/{id}/join
  */
 export const getJoinSharedFlatRequest =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
@@ -25,21 +25,37 @@ export const getJoinSharedFlatRequest =
     });
 
 /**
- * POST /shared-flat/{id}/join-request
+ * POST /shared-flat/{id}/join
  */
 export const postJoinSharedFlatRequest =
-    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+    asyncMiddleware(async (req: Request, res: Response) => {
         if (!req.params.id) {
             return res.status(400).json(format("Missing {id} param"));
         }
 
+        const hasAlreadyRequested = await JoinRequest.findOne({ userId: req.user.id }) as JoinRequestModel;
+        if (undefined != hasAlreadyRequested) {
+            throw new Error("One of you're request is already pending validation");
+        }
+
+        const user = await User.findById(req.user.id) as UserModel;
+        if (user.hasSharedFlat) {
+            throw new Error(`User ${user.id} has already a shared flat`);
+        }
+
         const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
-        await sharedFlat.makeJoinRequest(req.user);
-        res.status(200).json(format("Request successfully posted"));
+        user.joinRequestPending = true;
+
+        Promise.all([
+            await user.save(),
+            await sharedFlat.makeJoinRequest(req.user),
+        ]);
+
+        res.status(201).json(format("Request successfully posted"));
     });
 
 /**
- * POST /shared-flat/{sharedFlatId}/join-request/{joinRequestId}/validate
+ * POST /shared-flat/{sharedFlatId}/join/{joinRequestId}/validate
  */
 export const postValidateJoinRequest =
     asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
@@ -56,10 +72,10 @@ export const postValidateJoinRequest =
     });
 
 /**
- * POST /shared-flat/{sharedFlatId}/join-request/{joinRequestId}/reject
+ * POST /shared-flat/{sharedFlatId}/join/{joinRequestId}/reject
  */
 export const postRejectJoinRequest =
-    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+    asyncMiddleware(async (req: Request, res: Response) => {
         if (!req.params.sharedFlatId) {
             return res.status(400).json(format("Missing {sharedFlatId} param"));
         }

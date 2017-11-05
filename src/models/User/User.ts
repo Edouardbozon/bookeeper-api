@@ -35,6 +35,7 @@ export type UserModel = mongoose.Document & {
     tokens: AuthToken[]
 
     hasSharedFlat: boolean
+    joinRequestPending: boolean
 
     profile: {
         age: number
@@ -69,6 +70,7 @@ const userSchema = new mongoose.Schema({
     tokens: Array,
 
     hasSharedFlat: { type: Boolean, default: false },
+    joinRequestPending: { type: Boolean, default: false },
 
     profile: {
         name: String,
@@ -83,17 +85,11 @@ const userSchema = new mongoose.Schema({
 /**
  * Password hash middleware.
  */
-userSchema.pre("save", function save(this: UserModel, next: Function) {
-    SharedFlat.findOne({ "residents.id": this.id }, (err, sharedFlat: SharedFlatModel) => {
-        if (err) return next(err);
-        if (undefined == sharedFlat) {
-            this.hasSharedFlat = false;
-        } else {
-            this.hasSharedFlat = true;
-        }
-    });
+userSchema.pre("save", async function save(this: UserModel, next: Function) {
+    if (!this.isModified("password")) {
+        return next();
+    }
 
-    if (!this.isModified("password")) return next();
     bcrypt.genSalt(10, (err, salt) => {
         if (err) return next(err);
         bcrypt.hash(this.password, salt, undefined, (err: mongoose.Error, hash) => {
