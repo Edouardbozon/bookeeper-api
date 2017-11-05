@@ -131,22 +131,22 @@ app.delete("/api/shared-flat/:id", passportConfig.isAuthenticated, sharedFlatCon
  * Join requests
  */
 app.get(
-    "/api/shared-flat/:id/join-request",
+    "/api/shared-flat/:id/join",
     passportConfig.isAuthenticated,
     joinRequestController.getJoinSharedFlatRequest
 );
 app.post(
-    "/api/shared-flat/:id/join-request",
+    "/api/shared-flat/:id/join",
     passportConfig.isAuthenticated,
     joinRequestController.postJoinSharedFlatRequest
 );
 app.post(
-    "/api/shared-flat/:sharedFlatId/join-request/:joinRequestId/validate",
+    "/api/shared-flat/:sharedFlatId/join/:joinRequestId/validate",
     passportConfig.isAuthenticated,
     joinRequestController.postValidateJoinRequest
 );
 app.post(
-    "/api/shared-flat/:sharedFlatId/join-request/:joinRequestId/reject",
+    "/api/shared-flat/:sharedFlatId/join/:joinRequestId/reject",
     passportConfig.isAuthenticated,
     joinRequestController.postRejectJoinRequest
 );
