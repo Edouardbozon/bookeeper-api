@@ -9,9 +9,10 @@ services:
       - "9229:9229"
     volumes: 
       - ./:/code
+      - /code/node_modules
     links:
       - db
-    command: yarn run watch-debug
+    command: yarn run watch
   db:
     image: "mongo:3.0.15"
     restart: always
