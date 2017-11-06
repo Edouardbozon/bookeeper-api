@@ -35,6 +35,7 @@ export type UserModel = mongoose.Document & {
     tokens: AuthToken[]
 
     hasSharedFlat: boolean
+    sharedFlatId: string
     joinRequestPending: boolean
 
     profile: {
@@ -70,6 +71,7 @@ const userSchema = new mongoose.Schema({
     tokens: Array,
 
     hasSharedFlat: { type: Boolean, default: false },
+    sharedFlatId: { type: String, default: undefined },
     joinRequestPending: { type: Boolean, default: false },
 
     profile: {
@@ -114,9 +116,12 @@ userSchema.methods.acceptOrReject = async function(
     if (undefined == joinRequest) throw new Error("Join request not found");
 
     const askingUser = await User.findById(joinRequest.userId) as UserModel;
+    askingUser.joinRequestPending = false;
 
     if (status === "accepted") {
+        askingUser.sharedFlatId = joinRequest.sharedFlatId;
         await Promise.all([
+            askingUser.save(),
             joinRequest.validateRequest(),
             sharedFlat.notify(
                 `${this.profile.name} ${status} ${askingUser.profile.name} as resident of ${sharedFlat.name}`,
@@ -125,6 +130,7 @@ userSchema.methods.acceptOrReject = async function(
         ]);
     } else if (status === "rejected") {
         await Promise.all([
+            askingUser.save(),
             joinRequest.rejectRequest(),
             sharedFlat.notify(
                 `${this.profile.name} ${status} ${askingUser.profile.name} as resident of ${sharedFlat.name}`,

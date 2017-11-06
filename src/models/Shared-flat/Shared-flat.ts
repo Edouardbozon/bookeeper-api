@@ -93,22 +93,22 @@ export const sharedFlatSchema = new mongoose.Schema({
 /**
  * Parallel middleware
  */
-sharedFlatSchema.pre("save", function(this: SharedFlatModel, next: Function) {
-    if (!this.isModified()) return next();
+sharedFlatSchema.pre("save", async function(this: SharedFlatModel, next: Function) {
+    if (!this.isModified()) {
+        return next();
+    }
 
     // update updateAt whenever a change is trigger in entity
     this.updatedAt = new Date();
-
     // find shared flat residents to retrieve their age,
     // calculate "residents years rate", update "full" props and "countResidents"
-    const ids = this.residents.map((resident) => resident.id);
-    User.find({ "id": { $in: ids }}, ((err: any, residents: UserModel[]) => {
+    const ids = this.residents.map((resident: Resident) => resident.id);
+    const residents = await User.find({ "id": { $in: ids }}) as UserModel[];
 
-        this.countResidents = ids.length;
-        this.full = this.size === this.countResidents;
-        this.residentsYearsRate = this.computeResidentsYearsRate(residents);
-        next();
-    }));
+    this.countResidents = ids.length;
+    this.full = this.size === this.countResidents;
+    this.residentsYearsRate = this.computeResidentsYearsRate(residents);
+    next();
 });
 
 /**
@@ -165,6 +165,10 @@ sharedFlatSchema.methods.isMember = function(this: SharedFlatModel, user: UserMo
  * Compute years rate of a shared flat
  */
 sharedFlatSchema.methods.computeResidentsYearsRate = function(residents: UserModel[]): number {
+    if (residents.length === 1) {
+        return residents[0].profile.age;
+    }
+
     return residents.reduce((acc, resident) => resident.profile.age, 0) / residents.length;
 };
 

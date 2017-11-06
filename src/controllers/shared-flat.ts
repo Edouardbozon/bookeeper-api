@@ -49,12 +49,9 @@ export const createSharedFlat =
             throw new Error("You are already a member of a shared flat.");
         }
 
-        const user = req.user as UserModel;
-        user.hasSharedFlat = true;
-
         const sharedFlat = new SharedFlat({
             name: req.body.name,
-            residents: [{ id: user.id, role: "admin", joinAt: new Date() }],
+            residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
             size: req.body.size,
             pricePerMonth: req.body.pricePerMonth,
             bannerUrl: req.body.bannerUrl,
@@ -68,8 +65,15 @@ export const createSharedFlat =
             }
         });
 
-        await sharedFlat.save();
-        await user.save();
+        const user = req.user as UserModel;
+        user.hasSharedFlat = true;
+        user.sharedFlatId = sharedFlat.id;
+
+        await Promise.all([
+            sharedFlat.save(),
+            user.save(),
+        ]);
+
         res.status(201).json(sharedFlat);
     });
 
