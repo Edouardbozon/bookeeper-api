@@ -88,11 +88,16 @@ export default class EventFactory {
         const builtEvent = new Event(event) as EventModel;
         const notification = `New ${builtEvent.type} created by ${createdBy.profile.name}`;
 
-        await Promise.all([
-            previousEvent.save(),
-            builtEvent.save(),
-            sharedFlat.notify(notification, "info"),
-        ]);
+        await Promise.all<any>(
+            previousEvent ? [
+                builtEvent.save(),
+                previousEvent.save(),
+                sharedFlat.notify(notification, "info"),
+            ] : [
+                builtEvent.save(),
+                sharedFlat.notify(notification, "info"),
+            ]
+        );
 
         return builtEvent;
     }

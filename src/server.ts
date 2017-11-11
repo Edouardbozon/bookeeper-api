@@ -123,6 +123,7 @@ app.post("/api/me/notifications/read", passportConfig.isAuthenticated, notificat
  * Shared Flats
  */
 app.get("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.getSharedFlat);
+app.get("/api/shared-flat/:id", passportConfig.isAuthenticated, sharedFlatController.getSharedFlatDetail);
 app.post("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.createSharedFlat);
 app.put("/api/shared-flat", passportConfig.isAuthenticated, sharedFlatController.putSharedFlat);
 app.delete("/api/shared-flat/:id", passportConfig.isAuthenticated, sharedFlatController.deleteSharedFlat);

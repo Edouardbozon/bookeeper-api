@@ -5,6 +5,7 @@ import { asyncMiddleware } from "../common/common";
 import { format } from "../common/factories";
 import { EventModel, EventType } from "../models/Shared-flat/Event";
 import { default as SharedFlat, SharedFlatModel } from "../models/Shared-flat/Shared-flat";
+import { default as User, UserModel } from "../models/User/User";
 
 /**
  * GET /shared-flat/{id}/event
@@ -16,8 +17,15 @@ export const getEventList =
         }
 
         const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
-        if (undefined == sharedFlat) throw new Error(`Shared flat with id {${req.params.id}} not found`);
-        if (!sharedFlat.isMember(req.user)) throw new Error("Only shared flat resident should see events");
+        const user = await User.findById(req.user.id) as UserModel;
+
+        if (undefined == sharedFlat) {
+            throw new Error(`Shared flat with id {${req.params.id}} not found`);
+        }
+
+        if (!sharedFlat.isMember(user)) {
+            throw new Error("Only shared flat resident should see events");
+        }
 
         let filters = { sharedFlatId: sharedFlat.id };
         if (req.params.eventType) {
@@ -25,6 +33,7 @@ export const getEventList =
         }
 
         const events = await sharedFlat.getLastEvents(req.user.id, filters) as EventModel[];
+        console.log(events)
         res.status(200).json(events);
     });
 

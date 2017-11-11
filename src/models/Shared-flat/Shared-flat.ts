@@ -158,7 +158,7 @@ sharedFlatSchema.methods.getAdmin = function(this: SharedFlatModel): Resident {
  * Check if given user is member of this shared flat
  */
 sharedFlatSchema.methods.isMember = function(this: SharedFlatModel, user: UserModel): boolean {
-    return this.residents.filter((resident: Resident) => resident.id !== user.id).length === 1;
+    return this.residents.filter((resident: Resident) => resident.id !== user._id).length === 1;
 };
 
 /**

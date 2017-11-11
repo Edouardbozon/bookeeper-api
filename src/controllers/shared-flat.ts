@@ -5,7 +5,8 @@ import { LocalStrategyInfo } from "passport-local";
 import { asyncMiddleware } from "../common/common";
 import { format } from "../common/factories";
 import { default as SharedFlat, SharedFlatModel, Address } from "../models/Shared-flat/Shared-flat";
-import { UserModel } from "../models/User/User";
+import { default as User, UserModel } from "../models/User/User";
+import { EventType } from "../models/Shared-flat/Event";
 
 /**
  * GET /shared-flat
@@ -19,6 +20,24 @@ export const getSharedFlat =
 
         res.status(200).json(sharedFlats);
     });
+
+/**
+ * GET /shared-flat/{id}
+ */
+export const getSharedFlatDetail =
+    asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+        if (!req.params.id) {
+            return res.status(400).json(format("Missing {id} param"));
+        }
+
+        const sharedFlat = await SharedFlat.findById(req.params.id) as SharedFlatModel;
+        if (undefined == sharedFlat) {
+            return res.status(404).json(format("No Shared flat found"));
+        }
+
+        res.status(200).json(sharedFlat);
+    });
+
 
 /**
  * POST /shared-flat
@@ -63,15 +82,16 @@ export const createSharedFlat =
                 city: req.body.city,
                 country: req.body.country
             }
-        });
+        }) as SharedFlatModel;
 
-        const user = req.user as UserModel;
+        const user = await User.findById(req.user.id) as UserModel;
         user.hasSharedFlat = true;
         user.sharedFlatId = sharedFlat.id;
 
         await Promise.all([
             sharedFlat.save(),
             user.save(),
+            sharedFlat.createEvent(user.id, EventType.event)
         ]);
 
         res.status(201).json(sharedFlat);
