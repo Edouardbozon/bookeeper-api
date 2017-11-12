@@ -12,6 +12,7 @@ export interface IEvent {
     previousExpenseId: string;
     createdAt: Date;
     createdBy: string;
+    monthlyActivityAverage: number;
     last: boolean;
     type: EventType;
 }
@@ -41,6 +42,7 @@ const eventSchema = new mongoose.Schema({
     last: Boolean,
     type: String,
     amount: Number,
+    monthlyActivityAverage: Number,
     totalAmountAtThisTime: Number
 });
 

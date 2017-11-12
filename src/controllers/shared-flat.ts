@@ -34,6 +34,8 @@ export const getSharedFlatDetail =
         if (undefined == sharedFlat) {
             return res.status(404).json(format("No Shared flat found"));
         }
+        const user = await User.findById(req.user.id) as UserModel;
+        await sharedFlat.createEvent(user.id, EventType.event)
 
         res.status(200).json(sharedFlat);
     });

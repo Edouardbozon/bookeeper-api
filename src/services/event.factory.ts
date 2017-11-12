@@ -15,14 +15,25 @@ import {
  * Take care of creating events, linking them by a chain
  */
 export default class EventFactory {
-    static async create(
+
+    private static computeMonthlyAverage(previousEvents: EventModel[], date: Date): number {
+        const lastEventMonth = new Date(R.head(previousEvents).createdAt);
+
+        const prevMonthEvents = previousEvents.filter(
+            previousEvent => previousEvent.createdAt >= lastEventMonth
+        );
+
+        return previousEvents.length;
+    }
+
+    public static async create(
         sharedFlat: SharedFlatModel,
         type: EventType,
         createdBy: UserModel,
         specificProps: any = {}
     ): Promise<Document> {
 
-        const previousEvents = await sharedFlat.getLastEvents(createdBy.id);
+        const previousEvents = await sharedFlat.getLastEvents(createdBy.id) as EventModel[];
         const previousEvent = R.head(previousEvents) as EventModel;
 
         let number: number;
@@ -38,14 +49,18 @@ export default class EventFactory {
             previousEvent.last = false;
         }
 
+        const createdAt = new Date();
+        const monthlyActivityAverage = EventFactory.computeMonthlyAverage(previousEvents, createdAt);
+
         let event: IEvent = {
             number,
             type,
             last: true,
             sharedFlatId: sharedFlat.id,
             createdBy: createdBy.id,
-            createdAt: new Date(),
+            createdAt,
             previousExpenseId,
+            monthlyActivityAverage,
         };
 
         /**

@@ -91,7 +91,7 @@ export const sharedFlatSchema = new mongoose.Schema({
 });
 
 /**
- * Parallel middleware
+ * Middleware
  */
 sharedFlatSchema.pre("save", async function(this: SharedFlatModel, next: Function) {
     if (!this.isModified()) {
