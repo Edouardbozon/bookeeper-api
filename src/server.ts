@@ -30,7 +30,6 @@ dotenv.config({ path: ".env.example" });
  * Controllers (route handlers).
  */
 import * as userController from "./controllers/user";
-import * as apiController from "./controllers/facebook";
 import * as contactController from "./controllers/contact";
 import * as sharedFlatController from "./controllers/shared-flat";
 import * as joinRequestController from "./controllers/join-request";
@@ -115,7 +114,6 @@ app.post("/signup", userController.postSignup);
 /**
  * API routes
  */
-// app.get("/api/facebook", passportConfig.isAuthenticated, passportConfig.isAuthorized, apiController.getFacebook);
 app.get("/api/me/notifications", passportConfig.isAuthenticated, notificationController.getUserNotifications);
 app.post("/api/me/notifications/read", passportConfig.isAuthenticated, notificationController.postReadNotifications);
 
@@ -170,10 +168,12 @@ app.post(
  * OAuth authentication routes. (Sign in)
  */
 app.get("/auth/facebook", passport.authenticate("facebook", { scope: ["email", "public_profile"] }));
-app.get("/auth/facebook/callback", passport.authenticate("facebook", { failureRedirect: "/login" }), (req, res) => {
-    res.status(200).end();
+app.get("/auth/facebook/callback", passport.authenticate(
+    "facebook",
+    { failureRedirect: process.env.MOBILE_LIGHT_CLIENT_BASE_URL }),
+    (req, res) => {
+        res.redirect(process.env.MOBILE_LIGHT_CLIENT_BASE_URL);
 });
-
 
 /**
  * Error Handler. Provides full stack - remove for production
