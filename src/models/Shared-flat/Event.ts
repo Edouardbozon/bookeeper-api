@@ -1,49 +1,57 @@
 import * as mongoose from "mongoose";
 
 export enum EventType {
-    event = "event",
-    expenseEvent = "expense-event",
-    needEvent= "need-event",
+  event = "event",
+  expenseEvent = "expense-event",
+  needEvent = "need-event",
 }
 
 export interface IEvent {
-    number: number;
-    sharedFlatId: string;
-    previousExpenseId: string;
-    createdAt: Date;
-    createdBy: string;
-    monthlyActivityAverage: number;
-    last: boolean;
-    type: EventType;
+  number: number;
+  sharedFlatId: string;
+  previousExpenseId: string;
+  createdAt: Date;
+  createdBy: {
+    id: string;
+    name: string;
+    picture: string;
+  };
+  monthlyActivityAverage: number;
+  last: boolean;
+  type: EventType;
 }
 
 export interface IExpenseEvent extends IEvent {
-    totalAmountAtThisTime: number;
-    amount: number;
+  totalAmountAtThisTime: number;
+  amount: number;
 }
 
-export type NeedEventStatus = "fulfilled" | "rejected" | "pending" | "expired";
+export type NeedEventStatus = "fulfilled" | "rejected" | "pending" | "expired";
 
 export interface INeedEvent extends IEvent {
-    status: NeedEventStatus;
-    message: string;
-    requestedResident?: string;
-    expireAt: Date;
+  status: NeedEventStatus;
+  message: string;
+  requestedResident?: string;
+  expireAt: Date;
 }
 
-export interface EventModel extends mongoose.Document, IEvent, IExpenseEvent, INeedEvent {}
+export interface EventModel
+  extends mongoose.Document,
+    IEvent,
+    IExpenseEvent,
+    INeedEvent {}
 
 const eventSchema = new mongoose.Schema({
-    number: Number,
-    sharedFlatId: String,
-    previousExpenseId: String,
-    createdAt: { type: Date, default: Date.now },
-    createdBy: String,
-    last: Boolean,
-    type: String,
-    amount: Number,
-    monthlyActivityAverage: Number,
-    totalAmountAtThisTime: Number
+  number: Number,
+  sharedFlatId: String,
+  previousExpenseId: String,
+  createdAt: { type: Date, default: Date.now },
+  createdBy: Object,
+  last: Boolean,
+  type: String,
+  amount: Number,
+  monthlyActivityAverage: Number,
+  totalAmountAtThisTime: Number,
 });
 
 const Event = mongoose.model("Event", eventSchema);
