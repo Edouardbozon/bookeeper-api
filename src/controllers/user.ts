@@ -13,7 +13,8 @@ const request = require("express-validator");
  * POST /login
  * Sign in using email and password.
  */
-export let postLogin = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+export let postLogin = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Email is not valid").isEmail();
     req.assert("password", "Password cannot be blank").notEmpty();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
@@ -21,28 +22,34 @@ export let postLogin = asyncMiddleware(async (req: Request, res: Response, next:
     const errors = req.validationErrors();
 
     if (errors) {
-        return res.status(400).json(errors);
+      return res.status(400).json(errors);
     }
 
     passport.authenticate("local", (err: Error, user: UserModel) => {
-        if (err) return next(err);
-        if (!user) {
-            return res.status(404).json("User not found");
+      if (err) return next(err);
+      if (!user) {
+        return res.status(404).json("User not found");
+      }
+      req.logIn(user, err => {
+        if (err) {
+          return next(err);
         }
-        req.logIn(user, (err) => {
-            if (err) { return next(err); }
-            res.status(200).json(user);
-        });
+        res.status(200).json(user);
+      });
     })(req, res, next);
-});
+  },
+);
 
 /**
  * POST /signup
  * Create a new local account.
  */
-export let postSignup = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+export let postSignup = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Email is not valid").isEmail();
-    req.assert("password", "Password must be at least 4 characters long").len({ min: 4 });
+    req
+      .assert("password", "Password must be at least 4 characters long")
+      .len({ min: 4 });
     req.assert("age", "Age is incorrect").isInt();
     req.assert("name", "Cannot be empty").notEmpty();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
@@ -50,283 +57,367 @@ export let postSignup = asyncMiddleware(async (req: Request, res: Response, next
     const errors = req.validationErrors();
 
     if (errors) {
-        return res.status(500).json(errors);
+      return res.status(500).json(errors);
     }
 
     const user = new User({
-        email: req.body.email,
-        password: req.body.password,
-        profile: {
-            name: req.body.name,
-            age: req.body.age
-        }
+      email: req.body.email,
+      password: req.body.password,
+      profile: {
+        name: req.body.name,
+        age: req.body.age,
+      },
     }) as UserModel;
 
-    User.findOne({ email: req.body.email }, (err: any, existingUser: UserModel) => {
-        if (err) { return next(err); }
+    user.profile.picture = user.gravatar(80);
+
+    User.findOne(
+      { email: req.body.email },
+      (err: any, existingUser: UserModel) => {
+        if (err) {
+          return next(err);
+        }
         if (existingUser) {
-            res.status(409).send("User already exists");
+          res.status(409).send("User already exists");
         }
         user.save((err: any) => {
-            if (err) { return next(err); }
-            req.logIn(user, (err) => {
-                if (err) {
-                    return next(err);
-                }
-                res.status(201).json(user);
-            });
+          if (err) {
+            return next(err);
+          }
+          req.logIn(user, err => {
+            if (err) {
+              return next(err);
+            }
+            res.status(201).json(user);
+          });
         });
-    });
-});
+      },
+    );
+  },
+);
 
 /**
  * POST /account/profile
  * Update profile information.
  */
-export let postUpdateProfile = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+export let postUpdateProfile = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Please enter a valid email address.").isEmail();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
 
     const errors = req.validationErrors();
 
     if (errors) {
-        return res.status(400).json(errors);
+      return res.status(400).json(errors);
     }
 
     User.findById(req.user.id, (err: any, user: UserModel) => {
-        if (err) { return next(err); }
-        user.email = req.body.email || "";
-        user.profile.name = req.body.name || "";
-        user.profile.gender = req.body.gender || "";
-        user.profile.location = req.body.location || "";
-        user.profile.website = req.body.website || "";
-        user.save((err: WriteError) => {
-            if (err) {
-                if (err.code === 11000) {
-                    return res.status(504).json("The email address you have entered is already associated with an account.");
-                }
-                return next(err);
-            }
-            res.status(201);
-        });
+      if (err) {
+        return next(err);
+      }
+      user.email = req.body.email || "";
+      user.profile.name = req.body.name || "";
+      user.profile.gender = req.body.gender || "";
+      user.profile.location = req.body.location || "";
+      user.profile.website = req.body.website || "";
+      user.save((err: WriteError) => {
+        if (err) {
+          if (err.code === 11000) {
+            return res
+              .status(504)
+              .json(
+                "The email address you have entered is already associated with an account.",
+              );
+          }
+          return next(err);
+        }
+        res.status(201);
+      });
     });
-});
+  },
+);
 
 /**
  * POST /account/password
  * Update current password.
  */
-export let postUpdatePassword = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-    req.assert("password", "Password must be at least 4 characters long").len({ min: 4 });
-    req.assert("confirmPassword", "Passwords do not match").equals(req.body.password);
+export let postUpdatePassword = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
+    req
+      .assert("password", "Password must be at least 4 characters long")
+      .len({ min: 4 });
+    req
+      .assert("confirmPassword", "Passwords do not match")
+      .equals(req.body.password);
 
     const errors = req.validationErrors();
 
     if (errors) {
-        req.flash("errors", errors);
-        return res.redirect("/account");
+      req.flash("errors", errors);
+      return res.redirect("/account");
     }
 
     User.findById(req.user.id, (err: any, user: UserModel) => {
-        if (err) { return next(err); }
-        user.password = req.body.password;
-        user.save((err: WriteError) => {
-            if (err) { return next(err); }
-            req.flash("success", { msg: "Password has been changed." });
-            res.redirect("/account");
-        });
+      if (err) {
+        return next(err);
+      }
+      user.password = req.body.password;
+      user.save((err: WriteError) => {
+        if (err) {
+          return next(err);
+        }
+        req.flash("success", { msg: "Password has been changed." });
+        res.redirect("/account");
+      });
     });
-});
+  },
+);
 
 /**
  * POST /account/delete
  * Delete user account.
  */
-export let postDeleteAccount = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+export let postDeleteAccount = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
     User.remove({ _id: req.user.id }, (err: any) => {
-        if (err) { return next(err); }
-        req.logout();
-        req.flash("info", { msg: "Your account has been deleted." });
-        res.redirect("/");
+      if (err) {
+        return next(err);
+      }
+      req.logout();
+      req.flash("info", { msg: "Your account has been deleted." });
+      res.redirect("/");
     });
-});
+  },
+);
 
 /**
  * GET /account/unlink/:provider
  * Unlink OAuth provider.
  */
-export let getOauthUnlink = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+export let getOauthUnlink = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
     const provider = req.params.provider;
     User.findById(req.user.id, (err: any, user: any) => {
-        if (err) { return next(err); }
-        user[provider] = undefined;
-        user.tokens = user.tokens.filter((token: AuthToken) => token.kind !== provider);
-        user.save((err: WriteError) => {
-            if (err) { return next(err); }
-            req.flash("info", { msg: `${provider} account has been unlinked.` });
-            res.redirect("/account");
-        });
+      if (err) {
+        return next(err);
+      }
+      user[provider] = undefined;
+      user.tokens = user.tokens.filter(
+        (token: AuthToken) => token.kind !== provider,
+      );
+      user.save((err: WriteError) => {
+        if (err) {
+          return next(err);
+        }
+        req.flash("info", { msg: `${provider} account has been unlinked.` });
+        res.redirect("/account");
+      });
     });
-});
+  },
+);
 
 /**
  * GET /reset/:token
  * Reset Password page.
  */
-export let getReset = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+export let getReset = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
     if (req.isAuthenticated()) {
-        return res.redirect("/");
+      return res.redirect("/");
     }
-    User
-        .findOne({ passwordResetToken: req.params.token })
-        .where("passwordResetExpires").gt(Date.now())
-        .exec((err, user) => {
-            if (err) { return next(err); }
-            if (!user) {
-                req.flash("errors", { msg: "Password reset token is invalid or has expired." });
-                return res.redirect("/forgot");
-            }
-            res.render("account/reset", {
-                title: "Password Reset"
-            });
+    User.findOne({ passwordResetToken: req.params.token })
+      .where("passwordResetExpires")
+      .gt(Date.now())
+      .exec((err, user) => {
+        if (err) {
+          return next(err);
+        }
+        if (!user) {
+          req.flash("errors", {
+            msg: "Password reset token is invalid or has expired.",
+          });
+          return res.redirect("/forgot");
+        }
+        res.render("account/reset", {
+          title: "Password Reset",
         });
-});
+      });
+  },
+);
 
 /**
  * POST /reset/:token
  * Process the reset password request.
  */
-export let postReset = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
-    req.assert("password", "Password must be at least 4 characters long.").len({ min: 4 });
+export let postReset = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
+    req
+      .assert("password", "Password must be at least 4 characters long.")
+      .len({ min: 4 });
     req.assert("confirm", "Passwords must match.").equals(req.body.password);
 
     const errors = req.validationErrors();
 
     if (errors) {
-        req.flash("errors", errors);
-        return res.redirect("back");
+      req.flash("errors", errors);
+      return res.redirect("back");
     }
 
-    async.waterfall([
+    async.waterfall(
+      [
         function resetPassword(done: Function) {
-            User
-                .findOne({ passwordResetToken: req.params.token })
-                .where("passwordResetExpires").gt(Date.now())
-                .exec((err, user: any) => {
-                    if (err) { return next(err); }
-                    if (!user) {
-                        req.flash("errors", { msg: "Password reset token is invalid or has expired." });
-                        return res.redirect("back");
-                    }
-                    user.password = req.body.password;
-                    user.passwordResetToken = undefined;
-                    user.passwordResetExpires = undefined;
-                    user.save((err: WriteError) => {
-                        if (err) { return next(err); }
-                        req.logIn(user, (err) => {
-                            done(err, user);
-                        });
-                    });
+          User.findOne({ passwordResetToken: req.params.token })
+            .where("passwordResetExpires")
+            .gt(Date.now())
+            .exec((err, user: any) => {
+              if (err) {
+                return next(err);
+              }
+              if (!user) {
+                req.flash("errors", {
+                  msg: "Password reset token is invalid or has expired.",
                 });
+                return res.redirect("back");
+              }
+              user.password = req.body.password;
+              user.passwordResetToken = undefined;
+              user.passwordResetExpires = undefined;
+              user.save((err: WriteError) => {
+                if (err) {
+                  return next(err);
+                }
+                req.logIn(user, err => {
+                  done(err, user);
+                });
+              });
+            });
         },
         function sendResetPasswordEmail(user: UserModel, done: Function) {
-            const transporter = nodemailer.createTransport({
-                service: "SendGrid",
-                auth: {
-                    user: process.env.SENDGRID_USER,
-                    pass: process.env.SENDGRID_PASSWORD
-                }
+          const transporter = nodemailer.createTransport({
+            service: "SendGrid",
+            auth: {
+              user: process.env.SENDGRID_USER,
+              pass: process.env.SENDGRID_PASSWORD,
+            },
+          });
+          const mailOptions = {
+            to: user.email,
+            from: process.env.SENDGRID_USER_EMAIL,
+            subject: "Your password has been changed",
+            text: `Hello,\n\nThis is a confirmation that the password for your account ${
+              user.email
+            } has just been changed.\n`,
+          };
+          transporter.sendMail(mailOptions, err => {
+            req.flash("success", {
+              msg: "Success! Your password has been changed.",
             });
-            const mailOptions = {
-                to: user.email,
-                from: process.env.SENDGRID_USER_EMAIL,
-                subject: "Your password has been changed",
-                text: `Hello,\n\nThis is a confirmation that the password for your account ${user.email} has just been changed.\n`
-            };
-            transporter.sendMail(mailOptions, (err) => {
-                req.flash("success", { msg: "Success! Your password has been changed." });
-                done(err);
-            });
+            done(err);
+          });
+        },
+      ],
+      err => {
+        if (err) {
+          return next(err);
         }
-    ], (err) => {
-        if (err) { return next(err); }
         res.redirect("/");
-    });
-});
+      },
+    );
+  },
+);
 
 /**
  * GET /forgot
  * Forgot Password page.
  */
 export let getForgot = asyncMiddleware(async (req: Request, res: Response) => {
-    if (req.isAuthenticated()) {
-        return res.redirect("/");
-    }
-    res.render("account/forgot", {
-        title: "Forgot Password"
-    });
+  if (req.isAuthenticated()) {
+    return res.redirect("/");
+  }
+  res.render("account/forgot", {
+    title: "Forgot Password",
+  });
 });
 
 /**
  * POST /forgot
  * Create a random token, then the send user an email with a reset link.
  */
-export let postForgot = asyncMiddleware(async (req: Request, res: Response, next: NextFunction) => {
+export let postForgot = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
     req.assert("email", "Please enter a valid email address.").isEmail();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
 
     const errors = req.validationErrors();
 
     if (errors) {
-        req.flash("errors", errors);
-        return res.redirect("/forgot");
+      req.flash("errors", errors);
+      return res.redirect("/forgot");
     }
 
-    async.waterfall([
+    async.waterfall(
+      [
         function createRandomToken(done: Function) {
-            crypto.randomBytes(16, (err, buf) => {
-                const token = buf.toString("hex");
-                done(err, token);
-            });
+          crypto.randomBytes(16, (err, buf) => {
+            const token = buf.toString("hex");
+            done(err, token);
+          });
         },
         function setRandomToken(token: AuthToken, done: Function) {
-            User.findOne({ email: req.body.email }, (err, user: any) => {
-                if (err) { return done(err); }
-                if (!user) {
-                    req.flash("errors", { msg: "Account with that email address does not exist." });
-                    return res.redirect("/forgot");
-                }
-                user.passwordResetToken = token;
-                user.passwordResetExpires = Date.now() + 3600000; // 1 hour
-                user.save((err: WriteError) => {
-                    done(err, token, user);
-                });
+          User.findOne({ email: req.body.email }, (err, user: any) => {
+            if (err) {
+              return done(err);
+            }
+            if (!user) {
+              req.flash("errors", {
+                msg: "Account with that email address does not exist.",
+              });
+              return res.redirect("/forgot");
+            }
+            user.passwordResetToken = token;
+            user.passwordResetExpires = Date.now() + 3600000; // 1 hour
+            user.save((err: WriteError) => {
+              done(err, token, user);
             });
+          });
         },
-        function sendForgotPasswordEmail(token: AuthToken, user: UserModel, done: Function) {
-            const transporter = nodemailer.createTransport({
-                service: "SendGrid",
-                auth: {
-                    user: process.env.SENDGRID_USER,
-                    pass: process.env.SENDGRID_PASSWORD
-                }
-            });
-            const mailOptions = {
-                to: user.email,
-                from: process.env.SENDGRID_USER_EMAIL,
-                subject: "Reset your password",
-                text: `You are receiving this email because you (or someone else) have requested the reset of the password for your account.\n\n
+        function sendForgotPasswordEmail(
+          token: AuthToken,
+          user: UserModel,
+          done: Function,
+        ) {
+          const transporter = nodemailer.createTransport({
+            service: "SendGrid",
+            auth: {
+              user: process.env.SENDGRID_USER,
+              pass: process.env.SENDGRID_PASSWORD,
+            },
+          });
+          const mailOptions = {
+            to: user.email,
+            from: process.env.SENDGRID_USER_EMAIL,
+            subject: "Reset your password",
+            text: `You are receiving this email because you (or someone else) have requested the reset of the password for your account.\n\n
           Please click on the following link, or paste this into your browser to complete the process:\n\n
           http://${req.headers.host}/reset/${token}\n\n
-          If you did not request this, please ignore this email and your password will remain unchanged.\n`
-            };
-            transporter.sendMail(mailOptions, (err) => {
-                req.flash("info", { msg: `An e-mail has been sent to ${user.email} with further instructions.` });
-                done(err);
+          If you did not request this, please ignore this email and your password will remain unchanged.\n`,
+          };
+          transporter.sendMail(mailOptions, err => {
+            req.flash("info", {
+              msg: `An e-mail has been sent to ${
+                user.email
+              } with further instructions.`,
             });
+            done(err);
+          });
+        },
+      ],
+      err => {
+        if (err) {
+          return next(err);
         }
-    ], (err) => {
-        if (err) { return next(err); }
         res.redirect("/forgot");
-    });
-});
+      },
+    );
+  },
+);
