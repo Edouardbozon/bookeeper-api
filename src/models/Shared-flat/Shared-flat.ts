@@ -8,6 +8,7 @@ import { default as Event, EventModel, EventType } from "./Event";
 import EventFactory from "../../services/event.factory";
 
 import { NotificationType } from "../User/Notification";
+import { Schema } from "mongoose";
 
 export type Address = {
   city: string;
@@ -65,12 +66,24 @@ export type SharedFlatDocument = mongoose.Document & {
 };
 
 export const sharedFlatSchema = new mongoose.Schema({
-  name: { type: String, unique: true, default: "Sharedflat-" + Date.now },
+  name: {
+    type: String,
+    unique: true,
+    default: "Sharedflat-" + Date.now,
+  },
   private: { type: Boolean, default: false },
   size: { type: Number, default: 3 },
   full: { type: Boolean, default: false },
 
-  residents: [{ id: String, joinAt: Date, role: String }],
+  residents: [
+    {
+      id: Schema.Types.ObjectId,
+      joinAt: Date,
+      role: String,
+      name: String,
+      picture: String,
+    },
+  ],
   countResidents: { type: Number, default: 1 },
   residentsYearsRate: Number,
 

@@ -1,4 +1,5 @@
 import * as mongoose from "mongoose";
+import { Schema } from "mongoose";
 
 export enum EventType {
   event = "event",
@@ -43,8 +44,8 @@ export interface EventModel
 
 const eventSchema = new mongoose.Schema({
   number: Number,
-  sharedFlatId: String,
-  previousExpenseId: String,
+  sharedFlatId: Schema.Types.ObjectId,
+  previousExpenseId: Schema.Types.ObjectId,
   createdAt: { type: Date, default: Date.now },
   createdBy: Object,
   last: Boolean,

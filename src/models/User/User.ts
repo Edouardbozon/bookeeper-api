@@ -24,6 +24,7 @@ import {
   default as SharedFlat,
   SharedFlatModel,
 } from "../Shared-flat/Shared-flat";
+import { Schema } from "mongoose";
 
 export type UserModel = mongoose.Document & {
   email: string;
@@ -79,7 +80,7 @@ const userSchema = new mongoose.Schema(
     tokens: Array,
 
     hasSharedFlat: { type: Boolean, default: false },
-    sharedFlatId: { type: String, default: undefined },
+    sharedFlatId: { type: Schema.Types.ObjectId, default: undefined },
     joinRequestPending: { type: Boolean, default: false },
 
     profile: {
