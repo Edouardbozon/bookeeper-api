@@ -33,7 +33,6 @@ export const getJoinSharedFlatRequest = asyncMiddleware(
       sharedFlatId: sharedFlat.id,
     })) as JoinRequestModel[];
 
-    console.log(joinRequests);
     res.status(200).json(joinRequests);
   },
 );

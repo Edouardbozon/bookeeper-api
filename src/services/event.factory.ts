@@ -15,11 +15,14 @@ import {
  */
 export default class EventFactory {
   private static computeMonthlyAverage(
-    previousEvents: EventModel[],
+    previousEvents: EventModel[] = [],
     date: Date,
   ): number {
-    const lastEventMonth = new Date(R.head(previousEvents).createdAt);
+    if (previousEvents.length === 0) {
+      return 0;
+    }
 
+    const lastEventMonth = new Date(R.head(previousEvents).createdAt);
     const prevMonthEvents = previousEvents.filter(
       previousEvent => previousEvent.createdAt >= lastEventMonth,
     );

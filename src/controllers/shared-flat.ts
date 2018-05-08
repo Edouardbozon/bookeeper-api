@@ -41,8 +41,6 @@ export const getSharedFlatDetail = asyncMiddleware(
     if (undefined == sharedFlat) {
       return res.status(404).json(format("No Shared flat found"));
     }
-    const user = (await User.findById(req.user.id)) as UserModel;
-    await sharedFlat.createEvent(user.id, EventType.event);
 
     res.status(200).json(sharedFlat);
   },
@@ -82,7 +80,15 @@ export const createSharedFlat = asyncMiddleware(
 
     const sharedFlat = new SharedFlat({
       name: req.body.name,
-      residents: [{ id: req.user.id, role: "admin", joinAt: new Date() }],
+      residents: [
+        {
+          id: req.user.id,
+          name: req.user.name,
+          picture: req.user.profile.picture,
+          role: "admin",
+          joinAt: new Date(),
+        },
+      ],
       size: req.body.size,
       pricePerMonth: req.body.pricePerMonth,
       bannerUrl: req.body.bannerUrl,
