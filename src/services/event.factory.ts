@@ -7,6 +7,8 @@ import {
   EventModel,
   EventType,
   IEvent,
+  IExpenseEvent,
+  INeedEvent,
 } from "../models/Shared-flat/Event";
 
 /**
@@ -75,6 +77,11 @@ export default class EventFactory {
       monthlyActivityAverage,
     };
 
+    if (typeof specificProps.message === "string") {
+      const { message } = specificProps;
+      event = { ...event, message };
+    }
+
     /**
      * build type specifics props
      */
@@ -96,24 +103,17 @@ export default class EventFactory {
         totalAmountAtThisTime += amount;
 
         const expenseProps = { amount, totalAmountAtThisTime };
-        event = R.merge(event, expenseProps);
+        event = { ...event, ...expenseProps } as IExpenseEvent;
         break;
 
       case EventType.needEvent:
-        if (!R.has("message", specificProps)) {
-          throw new Error(
-            `{message} props is missing to instantiate an {${type}}`,
-          );
-        }
-
-        const { message } = specificProps;
-        const needProps: any = { status: "pending", message };
+        const needProps: any = { status: "pending" };
 
         if (R.has("requestedResident", specificProps)) {
           needProps.requestedResident = specificProps.requestedResident;
         }
 
-        event = R.merge(event, needProps);
+        event = { ...event, ...needProps } as INeedEvent;
         break;
 
       default:

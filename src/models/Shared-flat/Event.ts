@@ -12,6 +12,7 @@ export interface IEvent {
   sharedFlatId: string;
   previousExpenseId: string;
   createdAt: Date;
+  message?: string;
   createdBy: {
     id: string;
     name: string;
@@ -31,7 +32,6 @@ export type NeedEventStatus = "fulfilled" | "rejected" | "pending" | "expired";
 
 export interface INeedEvent extends IEvent {
   status: NeedEventStatus;
-  message: string;
   requestedResident?: string;
   expireAt: Date;
 }
@@ -53,6 +53,10 @@ const eventSchema = new mongoose.Schema({
   amount: Number,
   monthlyActivityAverage: Number,
   totalAmountAtThisTime: Number,
+  status: String,
+  message: String,
+  requestedResident: Schema.Types.ObjectId,
+  expireAt: Date,
 });
 
 const Event = mongoose.model("Event", eventSchema);
