@@ -47,7 +47,7 @@ const eventSchema = new mongoose.Schema({
   sharedFlatId: Schema.Types.ObjectId,
   previousExpenseId: Schema.Types.ObjectId,
   createdAt: { type: Date, default: Date.now },
-  createdBy: Object,
+  createdBy: Schema.Types.ObjectId,
   last: Boolean,
   type: String,
   amount: Number,

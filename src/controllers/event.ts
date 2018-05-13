@@ -46,7 +46,7 @@ export const getEventList = asyncMiddleware(
 );
 
 /**
- * POST /shared-flat/{id}/event
+ * POST /shared-flat/{id}/notify
  */
 export const postEvent = asyncMiddleware(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -54,7 +54,7 @@ export const postEvent = asyncMiddleware(
       return res.status(400).json(format("Missing {id} param"));
     }
 
-    const typeSpecificProps: any = {};
+    const typeSpecificProps: any = { message: req.params.message };
     const eventType = req.params.eventType || EventType.event;
 
     switch (eventType) {
@@ -62,9 +62,7 @@ export const postEvent = asyncMiddleware(
         typeSpecificProps.amount = req.params.amount || 0;
         break;
       case EventType.needEvent:
-        typeSpecificProps.message = req.params.message || undefined;
-        typeSpecificProps.requestedResident =
-          req.params.requestedResident || undefined;
+        typeSpecificProps.requestedResident = req.params.requestedResident;
         break;
 
       default:
@@ -74,14 +72,17 @@ export const postEvent = asyncMiddleware(
     const sharedFlat = (await SharedFlat.findById(
       req.params.id,
     )) as SharedFlatModel;
-    if (undefined == sharedFlat)
+
+    if (undefined == sharedFlat) {
       throw new Error(`Shared flat with id {${req.params.id}} not found`);
+    }
 
     const event = (await sharedFlat.createEvent(
       req.user.id,
       eventType,
       typeSpecificProps,
     )) as EventModel;
+
     res.status(201).json(format("Event created"));
   },
 );
