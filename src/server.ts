@@ -176,7 +176,7 @@ app.get(
   eventController.getEventList,
 );
 app.post(
-  "/api/shared-flat/:id/event",
+  "/api/shared-flat/:id/notify",
   passportConfig.isAuthenticated,
   eventController.postEvent,
 );
