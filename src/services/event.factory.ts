@@ -67,6 +67,7 @@ export default class EventFactory {
       type,
       last: true,
       sharedFlatId: sharedFlat.id,
+      published: false,
       createdBy: {
         id: createdBy.id,
         name: createdBy.profile.name,

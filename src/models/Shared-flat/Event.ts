@@ -13,6 +13,7 @@ export interface IEvent {
   previousExpenseId: string;
   createdAt: Date;
   message?: string;
+  published: boolean;
   createdBy: {
     id: string;
     name: string;
@@ -47,6 +48,7 @@ const eventSchema = new mongoose.Schema({
   sharedFlatId: Schema.Types.ObjectId,
   previousExpenseId: Schema.Types.ObjectId,
   createdAt: { type: Date, default: Date.now },
+  published: Boolean,
   createdBy: {
     id: Schema.Types.ObjectId,
     name: String,
