@@ -11,6 +11,7 @@ import {
 } from "../models/Shared-flat/Shared-flat";
 import { default as User, UserModel } from "../models/User/User";
 import { EventType } from "../models/Shared-flat/Event";
+import { createResident } from "../services/resident.factory";
 
 /**
  * GET /shared-flat
@@ -81,13 +82,10 @@ export const createSharedFlat = asyncMiddleware(
     const sharedFlat = new SharedFlat({
       name: req.body.name,
       residents: [
-        {
-          id: req.user.id,
-          name: req.user.name,
-          picture: req.user.profile.picture,
-          role: "admin",
-          joinAt: new Date(),
-        },
+        createResident(
+          (await User.findById(req.user.id)) as UserModel,
+          "admin",
+        ),
       ],
       size: req.body.size,
       pricePerMonth: req.body.pricePerMonth,

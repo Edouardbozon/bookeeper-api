@@ -17,6 +17,7 @@ export type Address = {
   country: string;
   [key: string]: string | number;
 };
+
 export type Resident = {
   id: string;
   joinAt: Date;
