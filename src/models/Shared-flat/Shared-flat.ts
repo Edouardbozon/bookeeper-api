@@ -266,7 +266,7 @@ sharedFlatSchema.methods.getLastEvents = async function(
   return (await Event.find(
     filters,
     {},
-    { sort: { number: -1 } },
+    { sort: { number: -1 } }, // todo fix
   )) as EventModel[];
 };
 

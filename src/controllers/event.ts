@@ -1,9 +1,14 @@
+import * as mongoose from "mongoose";
 import * as R from "ramda";
 import { Request, Response, NextFunction } from "express";
 import { LocalStrategyInfo } from "passport-local";
 import { asyncMiddleware } from "../common/common";
 import { format } from "../common/factories";
-import { EventModel, EventType } from "../models/Shared-flat/Event";
+import {
+  default as Event,
+  EventModel,
+  EventType,
+} from "../models/Shared-flat/Event";
 import {
   default as SharedFlat,
   SharedFlatModel,
@@ -15,10 +20,6 @@ import { default as User, UserModel } from "../models/User/User";
  */
 export const getEventList = asyncMiddleware(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.params.id) {
-      return res.status(400).json(format("Missing {id} param"));
-    }
-
     const sharedFlat = (await SharedFlat.findById(
       req.params.id,
     )) as SharedFlatModel;
@@ -46,14 +47,10 @@ export const getEventList = asyncMiddleware(
 );
 
 /**
- * POST /shared-flat/{id}/notify
+ * POST /shared-flat/{id}/draft
  */
 export const postEvent = asyncMiddleware(
   async (req: Request, res: Response, next: NextFunction) => {
-    if (!req.params.id) {
-      return res.status(400).json(format("Missing {id} param"));
-    }
-
     const typeSpecificProps: any = { message: req.params.message };
     const eventType = req.params.eventType || EventType.event;
 
@@ -83,6 +80,46 @@ export const postEvent = asyncMiddleware(
       typeSpecificProps,
     )) as EventModel;
 
-    res.status(201).json(format("Event created"));
+    res.status(201).json(format("Draft created"));
+  },
+);
+
+/**
+ * POST /shared-flat/{id}/event/{event-id}/publish
+ */
+export const postPublish = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const sharedFlat = (await SharedFlat.findById(
+      req.params.id,
+    )) as SharedFlatModel;
+    const user = (await User.findById(req.user.id)) as UserModel;
+
+    if (undefined == sharedFlat) {
+      throw new Error(`Shared flat with id {${req.params.id}} not found`);
+    }
+
+    if (!sharedFlat.isMember(user)) {
+      throw new Error("Only shared flat resident should see events");
+    }
+
+    // todo: check if user is the author of the published event
+    // todo: validate req.body
+    const draft = req.body;
+    const event = (await Event.findById(req.params.eventId)) as EventModel;
+
+    if (undefined == event) {
+      return res
+        .status(404)
+        .json(format("There is no corresponding event from given draft"));
+    }
+
+    event.published = true;
+    event.type = draft.type;
+    event.amount = draft.amount;
+    event.message = draft.message;
+    event.requestedResident = draft.requestedResident;
+    await event.save();
+
+    res.status(201).json(format("Draft published"));
   },
 );
