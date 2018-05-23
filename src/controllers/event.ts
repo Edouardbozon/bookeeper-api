@@ -14,24 +14,17 @@ import {
   SharedFlatModel,
 } from "../models/Shared-flat/Shared-flat";
 import { default as User, UserModel } from "../models/User/User";
+import { sharedFlatManager } from "../services/shared-flat.manager";
 
 /**
  * GET /shared-flat/{id}/event
  */
 export const getEventList = asyncMiddleware(
   async (req: Request, res: Response, next: NextFunction) => {
-    const sharedFlat = (await SharedFlat.findById(
+    const { user, sharedFlat } = await sharedFlatManager.provideContext(
+      req.user.id,
       req.params.id,
-    )) as SharedFlatModel;
-    const user = (await User.findById(req.user.id)) as UserModel;
-
-    if (undefined == sharedFlat) {
-      throw new Error(`Shared flat with id {${req.params.id}} not found`);
-    }
-
-    if (!sharedFlat.isMember(user)) {
-      throw new Error("Only shared flat resident should see events");
-    }
+    );
 
     let filters = { sharedFlatId: sharedFlat.id };
     if (req.params.eventType) {
@@ -51,9 +44,13 @@ export const getEventList = asyncMiddleware(
  */
 export const postEvent = asyncMiddleware(
   async (req: Request, res: Response, next: NextFunction) => {
+    const { user, sharedFlat } = await sharedFlatManager.provideContext(
+      req.user.id,
+      req.params.id,
+    );
+
     const typeSpecificProps: any = { message: req.params.message };
     const eventType = req.params.eventType || EventType.event;
-
     switch (eventType) {
       case EventType.expenseEvent:
         typeSpecificProps.amount = req.params.amount || 0;
@@ -64,14 +61,6 @@ export const postEvent = asyncMiddleware(
 
       default:
         break;
-    }
-
-    const sharedFlat = (await SharedFlat.findById(
-      req.params.id,
-    )) as SharedFlatModel;
-
-    if (undefined == sharedFlat) {
-      throw new Error(`Shared flat with id {${req.params.id}} not found`);
     }
 
     const event = (await sharedFlat.createEvent(
@@ -89,18 +78,10 @@ export const postEvent = asyncMiddleware(
  */
 export const postPublish = asyncMiddleware(
   async (req: Request, res: Response, next: NextFunction) => {
-    const sharedFlat = (await SharedFlat.findById(
+    const { user, sharedFlat } = await sharedFlatManager.provideContext(
+      req.user.id,
       req.params.id,
-    )) as SharedFlatModel;
-    const user = (await User.findById(req.user.id)) as UserModel;
-
-    if (undefined == sharedFlat) {
-      throw new Error(`Shared flat with id {${req.params.id}} not found`);
-    }
-
-    if (!sharedFlat.isMember(user)) {
-      throw new Error("Only shared flat resident should see events");
-    }
+    );
 
     // todo: check if user is the author of the published event
     // todo: validate req.body
