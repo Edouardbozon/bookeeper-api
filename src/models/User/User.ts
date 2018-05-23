@@ -205,7 +205,7 @@ userSchema.methods.getNotifications = function(
     Notification.find(
       R.merge({ userId: this.id }, filters),
       {},
-      { sort: { createdAt: -1 } },
+      { $orderby: { createdAt: -1 } },
       (err: any, notifications: NotificationModel[]) => {
         if (err) reject(err);
         resolve(notifications);
