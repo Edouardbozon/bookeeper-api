@@ -41,17 +41,19 @@ export default class EventFactory {
     const previousEvents = (await sharedFlat.getLastEvents(
       createdBy.id,
     )) as EventModel[];
-    const previousEvent = R.head(previousEvents) as EventModel;
+    const previousEvent = previousEvents[
+      previousEvents.length - 1
+    ] as EventModel;
 
     let number: number;
     let previousExpenseId: string;
 
     // first shared flat event
     if (!previousEvent) {
-      number = 0;
+      number = 1;
       previousExpenseId = undefined;
     } else {
-      number = R.add(R.prop("number", previousEvent), 1);
+      number = previousEvent.number + 1;
       previousExpenseId = previousEvent.id;
       previousEvent.last = false;
     }

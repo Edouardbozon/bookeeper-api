@@ -51,18 +51,6 @@ export const postEvent = asyncMiddleware(
 
     const typeSpecificProps: any = { message: req.params.message };
     const eventType = req.params.eventType || EventType.event;
-    switch (eventType) {
-      case EventType.expenseEvent:
-        typeSpecificProps.amount = req.params.amount || 0;
-        break;
-      case EventType.needEvent:
-        typeSpecificProps.requestedResident = req.params.requestedResident;
-        break;
-
-      default:
-        break;
-    }
-
     const event = (await sharedFlat.createEvent(
       req.user.id,
       eventType,
