@@ -104,3 +104,22 @@ export const postPublish = asyncMiddleware(
     res.status(201).json(format("Draft published"));
   },
 );
+
+/**
+ * DELETE /shared-flat/{id}/event/{event-id}/delete
+ */
+export const deleteEvent = asyncMiddleware(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { user, sharedFlat } = await sharedFlatManager.provideContext(
+      req.user.id,
+      req.params.id,
+    );
+
+    // todo: check if user is the author of the published event
+    const event = (await Event.findByIdAndRemove(
+      req.params.eventId,
+    )) as EventModel;
+
+    res.status(200).json(format("Event removed"));
+  },
+);

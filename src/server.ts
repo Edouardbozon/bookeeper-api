@@ -185,6 +185,11 @@ app.post(
   passportConfig.isAuthenticated,
   eventController.postPublish,
 );
+app.delete(
+  "/api/shared-flat/:id/event/:eventId/delete",
+  passportConfig.isAuthenticated,
+  eventController.deleteEvent,
+);
 
 /**
  * OAuth authentication routes. (Sign in)
