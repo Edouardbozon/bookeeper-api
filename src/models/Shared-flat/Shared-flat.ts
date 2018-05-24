@@ -240,8 +240,6 @@ sharedFlatSchema.methods.createEvent = async function(
   specificProps: any = {},
 ): Promise<EventModel> {
   const user = (await User.findById(userId)) as UserModel;
-  if (!this.isMember(user))
-    throw new Error("Only shared flat resident can create an event");
 
   return (await EventFactory.create(
     this,
@@ -266,7 +264,7 @@ sharedFlatSchema.methods.getLastEvents = async function(
   return (await Event.find(
     filters,
     {},
-    { sort: { number: -1 } },
+    { $orderby: { number: 1 } }, // todo fix
   )) as EventModel[];
 };
 
